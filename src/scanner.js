@@ -2,7 +2,7 @@
 module.exports = (function(){
   "use strict";
 
-  // Should test if in SES, and use SES's def if so.
+  // TODO: Should test if in SES, and use SES's def if so.
   const def = Object.freeze;
 
   const FAIL = def({toString: () => 'FAIL'});
