@@ -7,7 +7,6 @@ var _prototypeProperties = function (child, staticProps, instanceProps) { if (st
 var _classCallCheck = function (instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } };
 
 // Options: --free-variable-checker --require --validate
-// var module = module || {};
 module.exports = (function () {
   "use strict";
 
@@ -32,7 +31,7 @@ module.exports = (function () {
 
   // Like RE but must match entire string
   function allRE(RE) {
-    return def(RegExp("^" + RE.source + "$", RE.flags));
+    return RegExp("^" + RE.source + "$", RE.flags);
   }
 
   // Matches if it matches any of the argument RegExps
@@ -41,14 +40,14 @@ module.exports = (function () {
       REs[_key] = arguments[_key];
     }
 
-    return def(RegExp(REs.map(function (RE) {
+    return RegExp(REs.map(function (RE) {
       return RE.source;
-    }).join("|")));
+    }).join("|"));
   }
 
   // Turn RE into a capture group
   function captureRE(RE) {
-    return def(RegExp("(" + RE.source + ")", RE.flags));
+    return RegExp("(" + RE.source + ")", RE.flags);
   }
 
   // A position of a token in a template of a template string.
@@ -178,7 +177,8 @@ module.exports = (function () {
       // TODO: derive TOKEN_RE from otherTokenTypes
       // TODO: derive WHITESPACE_RE from further parameters to be
       // provided by the caller.
-      this.toks = Token.tokensInTemplate(template, TOKEN_RE, WHITESPACE_RE);
+      this.toks = Token.tokensInTemplate(template, new RegExp(TOKEN_RE.source, "g"), // Note: Not frozen
+      WHITESPACE_RE);
       var pos = 0;
       Object.defineProperty(this, "pos", {
         get: function () {
@@ -293,3 +293,9 @@ module.exports = (function () {
     Token: Token, Scanner: Scanner
   });
 })();
+
+/*
+var sc = require('./src/scanner6to5');
+var scanner = new sc.Scanner(['blah blah','blah'], []);
+scanner.toks
+*/

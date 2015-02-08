@@ -1,15 +1,108 @@
+// Options: --free-variable-checker --require --validate 
 module.exports = (function(){
   "use strict";
 
+  // Should test if in SES, and use SES's def if so.
+  const def = Object.freeze;
+
+  const FAIL = def({toString: () => 'FAIL'});
+  const EOF = def({toString: () => 'EOF'});
+
+  // JSON compat group. See json.org
   const SPACE_RE = /\s+/;
   const NUMBER_RE = /\d+(?:\.\d+)?(?:[eE]-?\d+)?/;
-  const STRING_RE = /\"(?:[^\"]|\\"|\\\\|\\\/|\\b|\\f|\\n|\\r|\\t|\\u[\da-fA-F][\da-fA-F][\da-fA-F][\da-fA-F])*\"/;
+  // Note no \' (escaped single quote) in accord with JSON.
+  const CHAR_RE = /[^\"\\]|\\"|\\\\|\\\/|\\b|\\f|\\n|\\r|\\t|\\u[\da-fA-F]{4}/
+  const STRING_RE_SRC = '\\"(?:' + CHAR_RE.source +  ')*\\"';
+  const STRING_RE = RegExp(STRING_RE_SRC);
   const IDENT_RE = /[a-zA-Z_\$][\w\$]*/;
+
+  // Like RE but must match entire string
+  function allRE(RE) {
+    return RegExp('^' + RE.source + '$', RE.flags);
+  }
+
+  // Matches if it matches any of the argument RegExps
+  function anyRE(...REs) {
+    return RegExp(REs.map(RE => RE.source).join('|'));
+  }
+
+  // Turn RE into a capture group
+  function captureRE(RE) {
+    return RegExp('(' + RE.source + ')', RE.flags);
+  }
+
+  // A position of a token in a template of a template string.
+  // Ideally, somewhere else there's a sourcemap from the source positions
+  // of the template string expression itself to the template itself, though
+  // this does not exist yet.
+  class Pos {
+    constructor(segmentNum, start, after) {
+      this.segmentNum = segmentNum;
+      this.start = start;
+      this.after = after;
+      def(this);
+    }
+    toString() { return `#${this.segmentNum}@${this.start}:${this.after}`; }
+  }
+
+  class Token {
+    constructor(text, pos) {
+      this.text = text;
+      this.pos = pos;
+      def(this);
+    }
+    toString() { return `${JSON.stringify(this.text)} at ${this.pos}`; }
+
+    static tokensInSegment(segmentNum, segment, RE, skipRE) {
+      let expectedIndex = 0;
+      RE.lastIndex = 0;
+      const result = [];
+  
+      while (RE.lastIndex < segment.length) {
+        const arr = RE.exec(segment);
+        if (arr === null) {
+          const badTok = 
+                new Token(segment.slice(RE.lastIndex),
+                          new Pos(segmentNum, RE.lastIndex, segment.length));
+          throw new SyntaxError(`Unexpected: ${badTok}`);
+        }
+        const text = arr[1];
+        const actualStart = RE.lastIndex - text.length;
+        const tok = new Token(text, 
+                              new Pos(segmentNum, actualStart, RE.lastIndex));
+        if (expectedIndex !== actualStart) {
+          throw new Error(`Internal: ${tok} expected at ${expectedIndex}`);
+        }
+        if (!allRE(skipRE).test(text)) { result.push(tok); }
+        expectedIndex = RE.lastIndex;
+      }
+      return def(result);
+    }
+
+    // Interleaved token records extracted from the segments of the
+    // template, and bare hole numbers representing the gap between
+    // templates.
+    static tokensInTemplate(template, RE, skipRE) {
+      const numSubs = template.length - 1;
+      var result = [];
+      for (var i = 0; i < numSubs; i++) {
+        result.push(...this.tokensInSegment(i, template[i], RE, skipRE));
+        result.push(i); // bare hole number
+      }
+      result.push(...this.tokensInSegment(
+          numSubs, template[numSubs], RE, skipRE));
+      return result;
+    }
+  }
+
+  // Cheap universal-enough token productions for ad hoc DSLs
   const SINGLE_OP = /[\[\]\(\){},;]/;
   const MULTI_OP = /[:~@%&+=*<>.?|\\\-\^\/]+/;
   const LINE_COMMENT_RE = /#.*\n/;
   
-  const TOKEN_RE_SRC = '(' + [
+  // Breaks a string into tokens for cheap ad hoc DSLs
+  const TOKEN_RE = captureRE(anyRE(
     SPACE_RE,
     NUMBER_RE,
     STRING_RE,
@@ -17,17 +110,97 @@ module.exports = (function(){
     SINGLE_OP,
     MULTI_OP,
     LINE_COMMENT_RE
-  ].map(re => re.source).join('|') + ')';
+  ));
 
-  return {
-    SPACE_RE,
-    NUMBER_RE,
-    STRING_RE,
-    IDENT_RE,
-    SINGLE_OP,
-    MULTI_OP,
-    LINE_COMMENT_RE,
-  
-    TOKEN_RE_SRC
-  };
+  // Whitespace tokens to skip in cheap ad hoc DSLs
+  const WHITESPACE_RE = anyRE(SPACE_RE, LINE_COMMENT_RE);
+
+  class Scanner {
+    constructor(template, tokenTypeList) {
+      this.keywords = new Set();
+      this.otherTokenTypes = new Set();
+      tokenTypeList.map(JSON.parse).forEach(tt => {
+        if (allRE(IDENT_RE).test(tt)) {
+          this.keywords.add(tt);
+        } else {
+          this.otherTokenTypes.add(tt);
+        }
+      });
+      def(this.keywords);  // TODO: should also freeze set contents
+      def(this.otherTokenTypes);  // TODO: should also freeze set contents
+
+      // TODO: derive TOKEN_RE from otherTokenTypes
+      // TODO: derive WHITESPACE_RE from further parameters to be
+      // provided by the caller.
+      this.toks = Token.tokensInTemplate(
+          template, 
+          new RegExp(TOKEN_RE.source, 'g'), // Note: Not frozen
+          WHITESPACE_RE);
+      let pos = 0;
+      Object.defineProperty(this, 'pos', {
+        get: () => { return pos; },
+        set: (oldPos) => { pos = oldPos; },
+        enumerable: true,
+        configurable: false
+      });
+      def(this);
+    }
+
+    try(thunk) {
+      var oldPos = this.pos;
+      var result = thunk();
+      if (FAIL === result) {
+        this.pos = oldPos;
+      }
+      return result;
+    }
+    eat(patt) {
+      if (this.pos >= this.toks.length) { return FAIL; }
+      var result = this.toks[this.pos];
+      if (typeof result === 'number') { return FAIL; }
+      if ((typeof patt === 'string' && patt === result.text) ||
+          allRE(patt).test(result.text)) {
+        this.pos++;
+        return result;
+      }
+      return FAIL;
+    }
+    eatNUMBER() { return this.eat(NUMBER_RE); }
+    eatSTRING() { return this.eat(STRING_RE); }
+    eatIDENT() { 
+      if (this.pos >= this.toks.length) { return FAIL; }
+      var result = this.toks[this.pos];
+      if (typeof result === 'number') { return FAIL; }
+      if (allRE(IDENT_RE).test(result.text) && 
+          !this.keywords.has(result.text)) {
+        this.pos++;
+        return result;
+      }
+      return FAIL;
+    }
+    eatHOLE() {
+      if (this.pos >= this.toks.length) { return FAIL; }
+      var result = this.toks[this.pos];
+      if (typeof result === 'number') {
+        this.pos++;
+        return result;
+      }
+      return FAIL;
+    }
+    eatEOF() { return this.pos >= this.toks.length ? EOF : FAIL; }
+  }
+
+
+  return def({
+    FAIL, EOF,
+    SPACE_RE, NUMBER_RE, STRING_RE, IDENT_RE,
+    allRE, anyRE, captureRE,
+    Token, Scanner
+  });
 }());
+
+/*
+var sc = require('./src/scanner6to5');
+var scanner = new sc.Scanner(['blah blah','blah'], []);
+scanner.toks
+*/
