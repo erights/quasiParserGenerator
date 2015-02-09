@@ -13,15 +13,15 @@ function doArith(bnf) {
    `;
 }
 
-function testArith(arith, left, right, answer) {
-  if (arith`1 + (2 + ${left} + ${right}) + 4` !== answer) {
+var arith = doArith(bootbnf);
+
+function testArith(arith) {
+  if (arith`1 + (2 + ${3*11} + ${55-11}) + 4` !== 84) {
     throw Error('arith template handler did not work');
   }
 };
 
-var arith = doArith(bootbnf);
-
-testArith(arith, 33, 44, 84);
+testArith(arith);
 
 
 //---------------
@@ -41,6 +41,6 @@ var metaCompile = bootbnf.doBnf((_, action0, ..._2) => action0);
 
 var arith0 = metaCompile(arithRules)(...arithActions);
   
-testArith(arith0, 33, 44, 84);
+testArith(arith0);
 
-testArith(doArith(bootbnf.doBnf(bootbnf)), 33, 44, 84);
+testArith(doArith(bootbnf.doBnf(bootbnf)));
