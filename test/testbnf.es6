@@ -1,7 +1,5 @@
 var bootbnf = require('../src/bootbnf.es6');
 
-var metaCompile = bootbnf.doBnf((_, action0, ..._2) => action0);
-
 function doArith(bnf) {
   return bnf`
     start ::= expr EOF  ${(v,_) => v};
@@ -26,6 +24,7 @@ var arith = doArith(bootbnf);
 testArith(arith, 33, 44, 84);
 
 
+//---------------
 
 var arithRules = [
  ['def','start',['act',['expr','EOF'],0]],
@@ -37,6 +36,8 @@ var arithRules = [
 
 
 var arithActions = doArith((_, ...actions) => actions);
+
+var metaCompile = bootbnf.doBnf((_, action0, ..._2) => action0);
 
 var arith0 = metaCompile(arithRules)(...arithActions);
   
