@@ -119,7 +119,7 @@ module.exports = (function(){
     constructor(template, tokenTypeList) {
       this.keywords = new Set();
       this.otherTokenTypes = new Set();
-      tokenTypeList.map(JSON.parse).forEach(tt => {
+      tokenTypeList.forEach(tt => {
         if (allRE(IDENT_RE).test(tt)) {
           this.keywords.add(tt);
         } else {
@@ -146,22 +146,14 @@ module.exports = (function(){
       def(this);
     }
 
-    try(thunk) {
-      var oldPos = this.pos;
-      var result = thunk();
-      if (FAIL === result) {
-        this.pos = oldPos;
-      }
-      return result;
-    }
     eat(patt) {
       if (this.pos >= this.toks.length) { return FAIL; }
-      var result = this.toks[this.pos];
-      if (typeof result === 'number') { return FAIL; }
-      if ((typeof patt === 'string' && patt === result.text) ||
-          allRE(patt).test(result.text)) {
+      var token = this.toks[this.pos];
+      if (typeof token === 'number') { return FAIL; }
+      if ((typeof patt === 'string' && patt === token.text) ||
+          allRE(patt).test(token.text)) {
         this.pos++;
-        return result;
+        return token.text;
       }
       return FAIL;
     }
@@ -169,21 +161,21 @@ module.exports = (function(){
     eatSTRING() { return this.eat(STRING_RE); }
     eatIDENT() { 
       if (this.pos >= this.toks.length) { return FAIL; }
-      var result = this.toks[this.pos];
-      if (typeof result === 'number') { return FAIL; }
-      if (allRE(IDENT_RE).test(result.text) && 
-          !this.keywords.has(result.text)) {
+      var token = this.toks[this.pos];
+      if (typeof token === 'number') { return FAIL; }
+      if (allRE(IDENT_RE).test(token.text) && 
+          !this.keywords.has(token.text)) {
         this.pos++;
-        return result;
+        return token.text;
       }
       return FAIL;
     }
     eatHOLE() {
       if (this.pos >= this.toks.length) { return FAIL; }
-      var result = this.toks[this.pos];
-      if (typeof result === 'number') {
+      var token = this.toks[this.pos];
+      if (typeof token === 'number') {
         this.pos++;
-        return result;
+        return token;
       }
       return FAIL;
     }
@@ -198,9 +190,3 @@ module.exports = (function(){
     Token, Scanner
   });
 }());
-
-/*
-var sc = require('./src/scanner6to5');
-var scanner = new sc.Scanner(['blah blah','blah'], []);
-scanner.toks
-*/

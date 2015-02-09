@@ -1,8 +1,5 @@
-// Options: --free-variable-checker --require --validate 
-
-var require,module;
-
-var sc = require('./scanner6to5');
+var to5 = require('6to5');
+var sc = require('./scanner.es6');
 
 module.exports = (function(){
   "use strict";
@@ -18,6 +15,7 @@ module.exports = (function(){
   "use strict";
   return ${expr};
 })`
+    closedFuncSrc = to5.transform(closedFuncSrc).code;
     // The following line should invoke "(1,eval)", i.e., the
     // indirect eval function, rather than the direct eval
     // operator. However, io.js in strict mode incorrectly
@@ -68,7 +66,7 @@ module.exports = (function(){
 
     var alphaCount = 0;
     // TODO(erights): Use lexical "let" once FF supports it.
-    const vars = ['var value = fail'];
+    const vars = ['var value = FAIL'];
     function nextVar(prefix) {
       const result = `${prefix}_${alphaCount++}`;
       vars.push(result);
@@ -99,8 +97,8 @@ module.exports = (function(){
           return (
 `(function(${paramSrcs.join(', ')}) {
   return function(template) {
-    const scanner = sc.Scanner(template.raw, ${tokenTypeListSrc});
-    const fail = scanner.fail;
+    const scanner = new sc.Scanner(template.raw, ${tokenTypeListSrc});
+    const FAIL = sc.FAIL;
     ${indent(rulesSrc,`
     `)}
     return rule_${rules[0][1]}();
@@ -124,13 +122,13 @@ module.exports = (function(){
           return `value = [];`;
         },
         fail: function() {
-          return `value = fail;`;
+          return `value = FAIL;`;
         },
         or: function(...choices) {
           const labelSrc = nextLabel('or');
           const choicesSrc = choices.map(peval).map(cSrc =>
 `${cSrc}
-if (value !== fail) break ${labelSrc};`).join('\n');
+if (value !== FAIL) break ${labelSrc};`).join('\n');
 
         return (
 `${labelSrc}: {
@@ -145,26 +143,26 @@ if (value !== fail) break ${labelSrc};`).join('\n');
           const vSrc = nextVar('v');
           const termsSrc = terms.map(peval).map(termSrc =>
 `${termSrc}
-if (value === fail) break ${labelSrc};
+if (value === FAIL) break ${labelSrc};
 ${sSrc}.push(value);`).join('\n');
   
           return (
 `${sSrc} = [];
-${vSrc} = fail;
+${vSrc} = FAIL;
 ${posSrc} = scanner.pos;
 ${labelSrc}: {
   ${indent(termsSrc,`
   `)}
   ${vSrc} = ${sSrc};
 }
-if ((value = ${vSrc}) === fail) scanner.pos = ${posSrc};`);
+if ((value = ${vSrc}) === FAIL) scanner.pos = ${posSrc};`);
         },
         act: function(terms, hole) {
           numSubs = Math.max(numSubs, hole + 1);
           const termsSrc = vtable.seq(...terms);
           return (
 `${termsSrc}
-if (value !== fail) value = act_${hole}(...value);`);
+if (value !== FAIL) value = act_${hole}(...value);`);
         },
         '**': function(patt, sep) {
           const posSrc = nextVar('pos');
@@ -178,7 +176,7 @@ ${posSrc} = scanner.pos;
 while (true) {
   ${indent(pattSrc,`
   `)}
-  if (value === fail) {
+  if (value === FAIL) {
     scanner.pos = ${posSrc};
     break;
   }
@@ -186,7 +184,7 @@ while (true) {
   ${posSrc} = scanner.pos;
   ${indent(sepSrc,`
   `)}
-  if (value === fail) break;
+  if (value === FAIL) break;
 }
 value = ${sSrc};`);
         },
@@ -194,7 +192,7 @@ value = ${sSrc};`);
           const starSrc = vtable['**'](patt, sep);
           return (
 `${starSrc}
-if (value.length === 0) value = fail;`);
+if (value.length === 0) value = FAIL;`);
         },
         '?': function(patt) {
           return vtable['**'](patt, ['fail']);
@@ -294,12 +292,8 @@ if (value.length === 0) value = fail;`);
   
   var bnfActions = doBnf((_, ...actions) => actions);
   
-  var bnf = metaCompile(bnfRules)(...bnfActions);
+  var bootbnf = metaCompile(bnfRules)(...bnfActions);
+  bootbnf.doBnf = doBnf;
  
-  return bnf;
+  return def(bootbnf);
 }());
-
-/*
-var bootbnf = require('./src/bootbnf6to5');
-bootbnf;
-*/
