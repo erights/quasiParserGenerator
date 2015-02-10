@@ -56,13 +56,13 @@ module.exports = (function(){
     const tokenTypes = new Set();
   
     // generated names
-    // act_${i}
-    // rule_${name}
-    // seq_${i}
-    // or_${i}
-    // pos_${i}
-    // s_${i}
-    // v_${i}
+    // act_${i}      action parameter
+    // rule_${name}  function from bnf rule
+    // seq_${i}      sequence success label
+    // or_${i}       choice failure label
+    // pos_${i}      backtrack token index
+    // s_${i}        accumulated list of values
+    // v_${i}        set to s_${i} on fall thru path
 
     var alphaCount = 0;
     // TODO(erights): Use lexical "let" once FF supports it.
@@ -262,9 +262,9 @@ if (value.length === 0) value = FAIL;`);
       rule ::= IDENT "::=" body ";"  ${(name,_,body,_2) => ['def', name, body]};
       body ::= choice ** "|"         ${list => simple('or', list)};
       choice ::=
-        term* HOLE                   ${(list,hole) => ['act', list, hole]}
-      | seq;
-      seq ::= term*                  ${list => simple('seq', list)};
+        seq HOLE                     ${(list,hole) => ['act', list, hole]}
+      | seq                          ${list => simple('seq', list)};
+      seq ::= term*;
       term ::= 
         prim ("**" | "++") prim      ${(patt,q,sep) => [q, patt, sep]}
       | prim ("?" | "*" | "+")       ${(patt,q) => [q, patt]}
@@ -280,9 +280,9 @@ if (value.length === 0) value = FAIL;`);
    ['def','bnf',['act',[['+','rule'],'EOF'], 0]],
    ['def','rule',['act',['IDENT','"::="','body','";"'], 1]],
    ['def','body',['act',[['**','choice','"|"']], 2]],
-   ['def','choice',['or',['act',[['*','term'],'HOLE'], 3],
-                    'seq']],
-   ['def','seq',['act',[['*','term']], 4]],
+   ['def','choice',['or',['act',['seq','HOLE'], 3],
+                    ['act',['seq'], 4]]],
+   ['def','seq',['*','term']],
    ['def','term',['or',['act',['prim',['or','"**"','"++"'],'prim'], 5],
                   ['act',['prim',['or','"?"','"*"','"+"']], 6],
                   'prim']],

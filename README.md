@@ -43,9 +43,9 @@ The grammar for our bnf language, extracted from src/bootbnf.es6, expressed in i
       rule ::= IDENT "::=" body ";"  ${(name,_,body,_2) => ['def', name, body]};
       body ::= choice ** "|"         ${list => simple('or', list)};
       choice ::=
-        term* HOLE                   ${(list,hole) => ['act', list, hole]}
-      | seq;
-      seq ::= term*                  ${list => simple('seq', list)};
+        seq HOLE                     ${(list,hole) => ['act', list, hole]}
+      | seq                          ${list => simple('seq', list)};
+      seq ::= term*;
       term ::=
         prim ("**" | "++") prim      ${(patt,q,sep) => [q, patt, sep]}
       | prim ("?" | "*" | "+")       ${(patt,q) => [q, patt]}
