@@ -61,7 +61,7 @@ where the action rules themselves only make sense within the context of src/boot
 
 The ```**``` operator is an infix generalization of the usual postfix ```*```, with the right operand recognized as the separator. For example, ```x ** ","``` recognizes ```x```'s separated by commas. The value is the list of values associated with the left (```x```) operand.
 
-```NUMBER``` and ```STRING``` are both recognized using the corresponding JSON productions. ```IDENT``` is what you'd expect. EOF recognizes the end of input.
+```NUMBER``` and ```STRING``` are both recognized using the corresponding JSON productions. ```IDENT``` is what you'd expect. ```EOF``` recognizes the end of input.
 
 Quoted identifier are keywords, and are therefore not recognized by the IDENT production with that grammer. Other quoted strings are literal tokens, but currently, only if they fit within the cheezy rules for recognizing operator tokens. See src/scanner.es6 for the current specifics. Instead, the operator token recognizition for a given grammar should be based on which quoted strings actually appear in the grammar.
 
