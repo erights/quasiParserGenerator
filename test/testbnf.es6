@@ -8,7 +8,7 @@ function doArith(bnf) {
     | term;
     term ::=
       NUMBER            ${n => (..._) => JSON.parse(n)}
-    | HOLE              ${(h) => (...subs) => subs[h]}
+    | HOLE              ${h => (...subs) => subs[h]}
     | "(" expr ")"      ${(_,v,_2) => v};
    `;
 }
