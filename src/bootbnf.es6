@@ -97,7 +97,7 @@ module.exports = (function(){
           return (
 `(function(${paramSrcs.join(', ')}) {
   return function(template) {
-    const scanner = new sc.Scanner(template.raw, ${tokenTypeListSrc});
+    const scanner = new Scanner(template.raw, ${tokenTypeListSrc});
     const FAIL = sc.FAIL;
     ${indent(rulesSrc,`
     `)}
