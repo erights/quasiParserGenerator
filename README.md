@@ -30,7 +30,7 @@ By expressing the bnf grammar itself as a template string, we avoid an awkwardne
 
 Each action rule takes as input the value associated with each of its input productions, and returns the value to be associated with its own production. The first bnf production is the start rule, and its value must be an n-ary function of the substitution values as arguments. The value returned by that function is the value of the template string expression as a whole.
 
-The generated template string tag caches that n-ary start function on the template (the unchanging part of the template string expression), to be reused on each evaluation by applying it to the new substitution values, so the parser generation step only happens on first evaluation.
+The generated template string tag caches that n-ary start function on the template (the unchanging part of the template string expression), to be reused on each evaluation by applying it to the new substitution values. Thus, the parsing step only happens on first evaluation.
 
 In the above ```arith``` grammar, each action returns such an n-ary function, with the start production simply returning the n-ary function associated with ```expr```. The ```NUMBER``` and ```HOLE``` productions are built in token types of our proof of concept bnf grammar. ```NUMBER``` returns the string recognized the JSON production for "number". The action rule ```n => (..._) => JSON.parse(n)``` turns this into an n-ary function of substition values, which are ignored, returning the resulting number itself.
 
