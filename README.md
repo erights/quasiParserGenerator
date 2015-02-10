@@ -1,8 +1,8 @@
 We present a proof of concept template string tag for generating template string tags. See below for why this is only a proof of concept. There are many good serious parser generator frameworks out there, all of which are easily superior to the toy parser generator at the heart of this tag. The point of this project is not to provide an alternative to any of these, but rather to demonstrate how any of these technologies could be adapted to provide a template string tag for generating template string tags that could and should replace this project.
 
-Nevertheless, until it is replaced, the template string tag for generating template string tags presented here is adequate for creating lots of little DSLs of some utility.
+Nevertheless, until it is replaced, the template string tag for generating template string tags presented here is adequate for creating lots of useful little DSLs.
 
-# A Template String Tag Generator.
+# A Template String Tag Generator
 
 The input to our parser generator is expressed as a bnf template string, and the result is a template string tag for parsing template strings expressed by that bnf. The name of a template string tag usually names the language in which the template is written, which in our case is ```bnf.``` An example extracted from test/testbnf.es6:
 
