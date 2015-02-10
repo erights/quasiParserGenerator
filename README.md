@@ -78,4 +78,4 @@ Errors within the input to ```bnf``` are hard to debug.
 
 Errors within the input to the generated tag (e.g., ```arith```) are hard to debug.
 
-One issue with reporting good errors is unfixable, except by improving the template string mechanism is a future EcmaScript standard: The template string itself doesn't yet carry any source position information. If it did (e.g., ```template.sourceMap```), then template string tags could report errors in their input in terms of original source position. This would necessarily also expose code to its own source position, which is probably good.
+One issue with reporting good errors is unfixable, except by improving the template string mechanism in a future EcmaScript standard: The template string itself doesn't yet carry any source position information. If it did (e.g., ```template.sourceMap```), then template string tags could report errors in their input in terms of original source position. This would necessarily also expose code to its own source position, which is probably good.
