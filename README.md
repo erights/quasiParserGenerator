@@ -4,7 +4,7 @@ Nevertheless, until it is replaced, the template string tag for generating templ
 
 # A Template String Tag Generator
 
-The input to our parser generator is expressed as a bnf template string, and the result is a template string tag for parsing template strings expressed by that bnf. The name of a template string tag usually names the language in which the template is written, which in our case is ```bnf.``` An example extracted from test/testbnf.es6:
+The input to our parser generator is expressed as a bnf template string, and the result is a template string tag for parsing template strings expressed in the grammar described by that bnf. The name of a template string tag usually names the language in which the template is written, which in our case is ```bnf.``` An example extracted from test/testbnf.es6:
 
 ```javascript
 var bnf = require('../src/bootbnf.es6');
