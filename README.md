@@ -32,7 +32,7 @@ Each action rule takes as input the value associated with each of its input prod
 
 The generated template string tag caches that n-ary start function on the template (the unchanging part of the template string expression), to be reused on each evaluation by applying it to the new substitution values. Thus, the parsing step only happens on first evaluation.
 
-In the above ```arith``` grammar, each action returns such an n-ary function. The start production simply returns the n-ary function associated with ```expr```. The ```NUMBER``` and ```HOLE``` productions are built in token types of our proof of concept bnf grammar. ```NUMBER``` returns the string recognized the JSON production for "number". The action rule ```n => (..._) => JSON.parse(n)``` turns this into an n-ary function of substition values, which are ignored, returning the resulting number itself.
+In the above ```arith``` grammar, each action returns such an n-ary function. The start production simply returns the n-ary function associated with ```expr```. The ```NUMBER``` and ```HOLE``` productions are built in token types of our proof of concept bnf grammar. ```NUMBER``` returns the string recognized by the JSON production for "number". The action rule ```n => (..._) => JSON.parse(n)``` turns this into an n-ary function of substition values, which are ignored, returning the resulting number itself.
 
 The ```HOLE``` production recognizes a substitution hole as a token type, and its value is the substitution hole number. The action rule ```h => (...subs) => subs[h]``` turns this into an n-ary function that returns the substition value provided for that hole.
 
