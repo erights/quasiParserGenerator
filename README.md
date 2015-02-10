@@ -67,3 +67,8 @@ The generated parser has most of the expense of a full backtracking parser with 
 
 Ambiguous grammars are neither detected nor parsed correctly. Instead, the alternatives are tried in order (like a PEG), but an earlier successful match will not be backtracked because of later failures. In this toy, "|" is a prioritized committed choice. That's why, for example, the bare ```prim``` rule comes last above among the choices for ```term```.
 
+Errors within the input to ```bnf``` are hard to debug.
+
+Errors within the input to the generated tag (e.g., ```arith```) are hard to debug.
+
+One issue with reporting good errors is unfixable, except by improving the template string mechanism is a future EcmaScript standard: The template string itself doesn't yet carry any source position information. If it did (e.g., ```template.sourceMap```), then template string tags could report errors in their input in terms of original source position. This would necessarily also expose code to its own source position, which is probably good.
