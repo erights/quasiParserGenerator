@@ -1,4 +1,4 @@
-require('6to5');
-require('6to5/register');
+require('babel');
+require('babel/register');
 
 var bootbnf = require('./test/testbnf.es6');

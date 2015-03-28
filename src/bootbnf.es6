@@ -1,4 +1,4 @@
-var to5 = require('6to5');
+var to5 = require('babel');
 var sc = require('./scanner.es6');
 
 module.exports = (function(){
