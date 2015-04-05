@@ -91,11 +91,11 @@ module.exports = (function(){
                 `[${[...tokenTypes].map(tt => JSON.stringify(tt)).join(', ')}]`;
           return (
 `(function(${paramSrcs.join(', ')}) {
-  return class {
+  return BaseParser => class extends BaseParser {
     constructor(template) {
-      this.scanner = new Scanner(template.raw, ${tokenTypeListSrc});
+      super(template, ${tokenTypeListSrc});
     }
-    parse() {
+    start() {
       return this.rule_${rules[0][1]}(0)[1];
     }
     ${indent(rulesSrc,`
@@ -205,27 +205,27 @@ if (value.length === 0) value = FAIL;`);
       if (typeof sexp === 'string') {
         if (sc.allRE(sc.STRING_RE).test(sexp)) {
           tokenTypes.add(sexp);
-          return `[pos, value] = this.scanner.eat(pos, ${sexp});`;
+          return `[pos, value] = this.eat(pos, ${sexp});`;
         }
         if (sc.allRE(sc.IDENT_RE).test(sexp)) {
           switch (sexp) {
             case 'NUMBER': {
               tokenTypes.add(sexp);
-              return `[pos, value] = this.scanner.eatNUMBER(pos);`;
+              return `[pos, value] = this.rule_NUMBER(pos);`;
             }
             case 'STRING': {
               tokenTypes.add(sexp);
-              return `[pos, value] = this.scanner.eatSTRING(pos);`;
+              return `[pos, value] = this.rule_STRING(pos);`;
             }
             case 'IDENT': {
               tokenTypes.add(sexp);
-              return `[pos, value] = this.scanner.eatIDENT(pos);`;
+              return `[pos, value] = this.rule_IDENT(pos);`;
             }
             case 'HOLE': {
-              return `[pos, value] = this.scanner.eatHOLE(pos);`;
+              return `[pos, value] = this.rule_HOLE(pos);`;
             }
             case 'EOF': {
-              return `[pos, value] = this.scanner.eatEOF(pos);`;
+              return `[pos, value] = this.rule_EOF(pos);`;
             }
             default: {
               // If it isn't a bnf keyword, assume it is a rule name.
@@ -244,18 +244,21 @@ if (value.length === 0) value = FAIL;`);
 
   function metaCompile(baseRules, _=void 0) {
     var baseAST = ['bnf', ...baseRules];
-    var baseParserClassMakerSrc = compile(baseAST);
-    var baseParserClassMaker = confine(baseParserClassMakerSrc, {
+    var parserTraitMakerSrc = compile(baseAST);
+    var makeParserTrait = confine(parserTraitMakerSrc, {
       Scanner: sc.Scanner,
       FAIL: sc.FAIL
     });
     return function(...baseActions) {
-      var BaseParser = baseParserClassMaker(...baseActions);
+      var parserTrait = makeParserTrait(...baseActions);
+      var Parser = parserTrait(sc.Scanner);
       function baseCurry(template) {
-        const parser = new BaseParser(template);
-        return parser.parse();
+        const parser = new Parser(template);
+        return parser.start();
       }
-      return quasiMemo(baseCurry);
+      var quasiParser = quasiMemo(baseCurry);
+      quasiParser.trait = parserTrait;
+      return quasiParser;
     };
   }
 

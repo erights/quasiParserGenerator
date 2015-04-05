@@ -115,6 +115,8 @@ module.exports = (function(){
   // Whitespace tokens to skip in cheap ad hoc DSLs
   const WHITESPACE_RE = anyRE(SPACE_RE, LINE_COMMENT_RE);
 
+  // The default abstract base Parser class for parser traits to extend.
+  // Since it is intended to be abstract, it has no start() method.
   class Scanner {
     constructor(template, tokenTypeList) {
       this.keywords = new Set();
@@ -133,7 +135,7 @@ module.exports = (function(){
       // TODO: derive WHITESPACE_RE from further parameters to be
       // provided by the caller.
       this.toks = Token.tokensInTemplate(
-          template,
+          template.raw,
           new RegExp(TOKEN_RE.source, 'g'),  // Note: Not frozen
           WHITESPACE_RE);
       def(this);
@@ -149,9 +151,9 @@ module.exports = (function(){
       }
       return [pos, FAIL];
     }
-    eatNUMBER(pos) { return this.eat(pos, NUMBER_RE); }
-    eatSTRING(pos) { return this.eat(pos, STRING_RE); }
-    eatIDENT(pos) {
+    rule_NUMBER(pos) { return this.eat(pos, NUMBER_RE); }
+    rule_STRING(pos) { return this.eat(pos, STRING_RE); }
+    rule_IDENT(pos) {
       if (pos >= this.toks.length) { return [pos, FAIL]; }
       var token = this.toks[pos];
       if (typeof token === 'number') { return [pos, FAIL]; }
@@ -161,7 +163,7 @@ module.exports = (function(){
       }
       return [pos, FAIL];
     }
-    eatHOLE(pos) {
+    rule_HOLE(pos) {
       if (pos >= this.toks.length) { return [pos, FAIL]; }
       var token = this.toks[pos];
       if (typeof token === 'number') {
@@ -169,7 +171,7 @@ module.exports = (function(){
       }
       return [pos, FAIL];
     }
-    eatEOF(pos) {
+    rule_EOF(pos) {
       return [pos, pos >= this.toks.length ? EOF : FAIL];
     }
   }
