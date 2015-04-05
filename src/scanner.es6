@@ -85,8 +85,8 @@ module.exports = (function(){
     // templates.
     static tokensInTemplate(template, RE, skipRE) {
       const numSubs = template.length - 1;
-      var result = [];
-      for (var i = 0; i < numSubs; i++) {
+      const result = [];
+      for (let i = 0; i < numSubs; i++) {
         result.push(...this.tokensInSegment(i, template[i], RE, skipRE));
         result.push(i); // bare hole number
       }
@@ -143,7 +143,7 @@ module.exports = (function(){
 
     eat(pos, patt) {
       if (pos >= this.toks.length) { return [pos, FAIL]; }
-      var token = this.toks[pos];
+      const token = this.toks[pos];
       if (typeof token === 'number') { return [pos, FAIL]; }
       if ((typeof patt === 'string' && patt === token.text) ||
           allRE(patt).test(token.text)) {
@@ -155,7 +155,7 @@ module.exports = (function(){
     rule_STRING(pos) { return this.eat(pos, STRING_RE); }
     rule_IDENT(pos) {
       if (pos >= this.toks.length) { return [pos, FAIL]; }
-      var token = this.toks[pos];
+      const token = this.toks[pos];
       if (typeof token === 'number') { return [pos, FAIL]; }
       if (allRE(IDENT_RE).test(token.text) &&
           !this.keywords.has(token.text)) {
@@ -165,7 +165,7 @@ module.exports = (function(){
     }
     rule_HOLE(pos) {
       if (pos >= this.toks.length) { return [pos, FAIL]; }
-      var token = this.toks[pos];
+      const token = this.toks[pos];
       if (typeof token === 'number') {
         return [pos + 1, token];
       }

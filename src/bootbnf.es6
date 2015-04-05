@@ -1,6 +1,6 @@
-var to5 = require('babel');
-var sc = require('./scanner.es6');
-var Mapish = require('./Mapish');
+const to5 = require('babel');
+const sc = require('./scanner.es6');
+const Mapish = require('./Mapish');
 
 module.exports = (function(){
   "use strict";
@@ -10,21 +10,21 @@ module.exports = (function(){
 
   // TODO: Should test if in SES, and use SES's confine if so.
   function confine(expr, env) {
-    var names = Object.getOwnPropertyNames(env);
-    var closedFuncSrc =
+    const names = Object.getOwnPropertyNames(env);
+    let closedFuncSrc =
 `(function(${names.join(',')}) {
   "use strict";
   return ${expr};
 })`
     closedFuncSrc = to5.transform(closedFuncSrc).code;
-    var closedFunc = (1,eval)(closedFuncSrc);
+    const closedFunc = (1,eval)(closedFuncSrc);
     return closedFunc(...names.map(n => env[n]));
   }
 
   function quasiMemo(quasiCurry) {
     const wm = new WeakMap();
     return function(template, ...subs) {
-      var quasiRest = wm.get(template);
+      let quasiRest = wm.get(template);
       if (!quasiRest) {
         quasiRest = quasiCurry(template);
         wm.set(template, quasiRest);
@@ -48,7 +48,7 @@ module.exports = (function(){
   }
 
   function compile(sexp) {
-    var numSubs = 0;
+    let numSubs = 0;
     const tokenTypes = new Set();
 
     // generated names
@@ -60,7 +60,7 @@ module.exports = (function(){
     // s_${i}        accumulated list of values
     // v_${i}        set to s_${i} on fall thru path
 
-    var alphaCount = 0;
+    let alphaCount = 0;
     const vars = ['let value = FAIL'];
     function nextVar(prefix) {
       const result = `${prefix}_${alphaCount++}`;
@@ -84,7 +84,7 @@ module.exports = (function(){
           const rulesSrc = rules.map(peval).join('\n');
 
           const paramSrcs = [];
-          for (var i = 0; i < numSubs; i++) {
+          for (let i = 0; i < numSubs; i++) {
             paramSrcs.push(`act_${i}`)
           }
           const tokenTypeListSrc =
@@ -243,20 +243,20 @@ if (value.length === 0) value = FAIL;`);
 
 
   function metaCompile(baseRules, _=void 0) {
-    var baseAST = ['bnf', ...baseRules];
-    var parserTraitMakerSrc = compile(baseAST);
-    var makeParserTrait = confine(parserTraitMakerSrc, {
+    const baseAST = ['bnf', ...baseRules];
+    const parserTraitMakerSrc = compile(baseAST);
+    const makeParserTrait = confine(parserTraitMakerSrc, {
       Scanner: sc.Scanner,
       FAIL: sc.FAIL
     });
     return function(...baseActions) {
-      var parserTrait = makeParserTrait(...baseActions);
-      var Parser = parserTrait(sc.Scanner);
+      const parserTrait = makeParserTrait(...baseActions);
+      const Parser = parserTrait(sc.Scanner);
       function baseCurry(template) {
         const parser = new Parser(template);
         return parser.start();
       }
-      var quasiParser = quasiMemo(baseCurry);
+      const quasiParser = quasiMemo(baseCurry);
       quasiParser.trait = parserTrait;
       return quasiParser;
     };
@@ -282,7 +282,7 @@ if (value.length === 0) value = FAIL;`);
     `;
   }
 
-  var bnfRules = [
+  const bnfRules = [
    ['def','bnf',['act',[['+','rule'],'EOF'], 0]],
    ['def','rule',['act',['IDENT','"::="','body','";"'], 1]],
    ['def','body',['act',[['**','choice','"|"']], 2]],
@@ -296,9 +296,9 @@ if (value.length === 0) value = FAIL;`);
                   '"NUMBER"','"STRING"','"IDENT"','"HOLE"','"EOF"',
                   ['act',['"("','body','")"'], 7]]]];
 
-  var bnfActions = doBnf((_, ...actions) => actions);
+  const bnfActions = doBnf((_, ...actions) => actions);
 
-  var bootbnf = metaCompile(bnfRules)(...bnfActions);
+  const bootbnf = metaCompile(bnfRules)(...bnfActions);
   bootbnf.doBnf = doBnf;
 
   return def(bootbnf);
