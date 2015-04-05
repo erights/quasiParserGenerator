@@ -81,7 +81,7 @@ module.exports = (function(){
       const vtable = Object.freeze({
         bnf: function(...rules) {
           // The following line also initializes tokenTypes and numSubs
-          const rulesSrc = rules.map(peval).join('');
+          const rulesSrc = rules.map(peval).join('\n');
 
           const paramSrcs = [];
           for (var i = 0; i < numSubs; i++) {
@@ -91,12 +91,16 @@ module.exports = (function(){
                 `[${[...tokenTypes].map(tt => JSON.stringify(tt)).join(', ')}]`;
           return (
 `(function(${paramSrcs.join(', ')}) {
-  return function(template) {
-    const scanner = new Scanner(template.raw, ${tokenTypeListSrc});
+  return class {
+    constructor(template) {
+      this.scanner = new Scanner(template.raw, ${tokenTypeListSrc});
+    }
+    parse() {
+      return this.rule_${rules[0][1]}(0)[1];
+    }
     ${indent(rulesSrc,`
     `)}
-    return rule_${rules[0][1]}(0)[1];
-  };
+  }
 })
 `);
         },
@@ -104,13 +108,12 @@ module.exports = (function(){
           // The following line also initializes vars
           const bodySrc = peval(body);
           return (
-`function rule_${name}(pos) {
+`rule_${name}(pos) {
   ${takeVarsSrc()}
   ${indent(bodySrc,`
   `)}
   return [pos, value];
-}
-`);
+}`);
         },
         empty: function() {
           return `value = [];`;
@@ -202,31 +205,31 @@ if (value.length === 0) value = FAIL;`);
       if (typeof sexp === 'string') {
         if (sc.allRE(sc.STRING_RE).test(sexp)) {
           tokenTypes.add(sexp);
-          return `[pos, value] = scanner.eat(pos, ${sexp});`;
+          return `[pos, value] = this.scanner.eat(pos, ${sexp});`;
         }
         if (sc.allRE(sc.IDENT_RE).test(sexp)) {
           switch (sexp) {
             case 'NUMBER': {
               tokenTypes.add(sexp);
-              return `[pos, value] = scanner.eatNUMBER(pos);`;
+              return `[pos, value] = this.scanner.eatNUMBER(pos);`;
             }
             case 'STRING': {
               tokenTypes.add(sexp);
-              return `[pos, value] = scanner.eatSTRING(pos);`;
+              return `[pos, value] = this.scanner.eatSTRING(pos);`;
             }
             case 'IDENT': {
               tokenTypes.add(sexp);
-              return `[pos, value] = scanner.eatIDENT(pos);`;
+              return `[pos, value] = this.scanner.eatIDENT(pos);`;
             }
             case 'HOLE': {
-              return `[pos, value] = scanner.eatHOLE(pos);`;
+              return `[pos, value] = this.scanner.eatHOLE(pos);`;
             }
             case 'EOF': {
-              return `[pos, value] = scanner.eatEOF(pos);`;
+              return `[pos, value] = this.scanner.eatEOF(pos);`;
             }
             default: {
               // If it isn't a bnf keyword, assume it is a rule name.
-              return `[pos, value] = rule_${sexp}(pos);`;
+              return `[pos, value] = this.rule_${sexp}(pos);`;
             }
           }
         }
@@ -238,15 +241,20 @@ if (value.length === 0) value = FAIL;`);
     return peval(sexp);
   }
 
+
   function metaCompile(baseRules, _=void 0) {
     var baseAST = ['bnf', ...baseRules];
-    var baseSrc = compile(baseAST);
-    var baseParser = confine(baseSrc, {
+    var baseParserClassMakerSrc = compile(baseAST);
+    var baseParserClassMaker = confine(baseParserClassMakerSrc, {
       Scanner: sc.Scanner,
       FAIL: sc.FAIL
     });
     return function(...baseActions) {
-      var baseCurry = baseParser(...baseActions);
+      var BaseParser = baseParserClassMaker(...baseActions);
+      function baseCurry(template) {
+        const parser = new BaseParser(template);
+        return parser.parse();
+      }
       return quasiMemo(baseCurry);
     };
   }
