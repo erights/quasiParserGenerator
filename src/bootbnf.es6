@@ -209,24 +209,7 @@ if (value.length === 0) value = FAIL;`);
         }
         if (sc.allRE(sc.IDENT_RE).test(sexp)) {
           switch (sexp) {
-            case 'NUMBER': {
-              tokenTypes.add(sexp);
-              return `[pos, value] = this.rule_NUMBER(pos);`;
-            }
-            case 'STRING': {
-              tokenTypes.add(sexp);
-              return `[pos, value] = this.rule_STRING(pos);`;
-            }
-            case 'IDENT': {
-              tokenTypes.add(sexp);
-              return `[pos, value] = this.rule_IDENT(pos);`;
-            }
-            case 'HOLE': {
-              return `[pos, value] = this.rule_HOLE(pos);`;
-            }
-            case 'EOF': {
-              return `[pos, value] = this.rule_EOF(pos);`;
-            }
+            // keywords would go here
             default: {
               // If it isn't a bnf keyword, assume it is a rule name.
               return `[pos, value] = this.rule_${sexp}(pos);`;
@@ -277,7 +260,6 @@ if (value.length === 0) value = FAIL;`);
       | prim;
       prim ::=
         STRING | IDENT
-      | "NUMBER" | "STRING" | "IDENT" | "HOLE" | "EOF"
       | "(" body ")"                 ${(_,b,_2) => b};
     `;
   }
@@ -293,7 +275,6 @@ if (value.length === 0) value = FAIL;`);
                   ['act',['prim',['or','"?"','"*"','"+"']], 6],
                   'prim']],
    ['def','prim',['or','STRING','IDENT',
-                  '"NUMBER"','"STRING"','"IDENT"','"HOLE"','"EOF"',
                   ['act',['"("','body','")"'], 7]]]];
 
   const bnfActions = doBnf((_, ...actions) => actions);
