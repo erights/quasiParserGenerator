@@ -134,7 +134,7 @@ module.exports = (function(){
       // provided by the caller.
       this.toks = Token.tokensInTemplate(
           template,
-          new RegExp(TOKEN_RE.source, 'g'), // Note: Not frozen
+          new RegExp(TOKEN_RE.source, 'g'),  // Note: Not frozen
           WHITESPACE_RE);
       let pos = 0;
       Object.defineProperty(this, 'pos', {

@@ -1,5 +1,6 @@
 var to5 = require('babel');
 var sc = require('./scanner.es6');
+var Mapish = require('./Mapish');
 
 module.exports = (function(){
   "use strict";
@@ -16,12 +17,7 @@ module.exports = (function(){
   return ${expr};
 })`
     closedFuncSrc = to5.transform(closedFuncSrc).code;
-    // The following line should invoke "(1,eval)", i.e., the
-    // indirect eval function, rather than the direct eval
-    // operator. However, io.js in strict mode incorrectly
-    // issues the following error:
-    // "SyntaxError: Unexpected eval or arguments in strict mode"
-    var closedFunc = eval(closedFuncSrc);
+    var closedFunc = (1,eval)(closedFuncSrc);
     return closedFunc(...names.map(n => env[n]));
   }
 
@@ -58,15 +54,14 @@ module.exports = (function(){
     // generated names
     // act_${i}      action parameter
     // rule_${name}  function from bnf rule
-    // seq_${i}      sequence success label
-    // or_${i}       choice failure label
+    // seq_${i}      sequence failure label
+    // or_${i}       choice success label
     // pos_${i}      backtrack token index
     // s_${i}        accumulated list of values
     // v_${i}        set to s_${i} on fall thru path
 
     var alphaCount = 0;
-    // TODO(erights): Use lexical "let" once FF supports it.
-    const vars = ['var value = FAIL'];
+    const vars = ['let value = FAIL'];
     function nextVar(prefix) {
       const result = `${prefix}_${alphaCount++}`;
       vars.push(result);
@@ -98,7 +93,6 @@ module.exports = (function(){
 `(function(${paramSrcs.join(', ')}) {
   return function(template) {
     const scanner = new Scanner(template.raw, ${tokenTypeListSrc});
-    const FAIL = sc.FAIL;
     ${indent(rulesSrc,`
     `)}
     return rule_${rules[0][1]}();
@@ -248,7 +242,8 @@ if (value.length === 0) value = FAIL;`);
     var baseAST = ['bnf', ...baseRules];
     var baseSrc = compile(baseAST);
     var baseParser = confine(baseSrc, {
-      Scanner: sc.Scanner
+      Scanner: sc.Scanner,
+      FAIL: sc.FAIL
     });
     return function(...baseActions) {
       var baseCurry = baseParser(...baseActions);
