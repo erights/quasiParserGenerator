@@ -1,4 +1,4 @@
-// Options: --free-variable-checker --require --validate 
+// Options: --free-variable-checker --require --validate
 module.exports = (function(){
   "use strict";
 
@@ -58,18 +58,18 @@ module.exports = (function(){
       let expectedIndex = 0;
       RE.lastIndex = 0;
       const result = [];
-  
+
       while (RE.lastIndex < segment.length) {
         const arr = RE.exec(segment);
         if (arr === null) {
-          const badTok = 
+          const badTok =
                 new Token(segment.slice(RE.lastIndex),
                           new Pos(segmentNum, RE.lastIndex, segment.length));
           throw new SyntaxError(`Unexpected: ${badTok}`);
         }
         const text = arr[1];
         const actualStart = RE.lastIndex - text.length;
-        const tok = new Token(text, 
+        const tok = new Token(text,
                               new Pos(segmentNum, actualStart, RE.lastIndex));
         if (expectedIndex !== actualStart) {
           throw new Error(`Internal: ${tok} expected at ${expectedIndex}`);
@@ -100,7 +100,7 @@ module.exports = (function(){
   const SINGLE_OP = /[\[\]\(\){},;]/;
   const MULTI_OP = /[:~@%&+=*<>.?|\\\-\^\/]+/;
   const LINE_COMMENT_RE = /#.*\n/;
-  
+
   // Breaks a string into tokens for cheap ad hoc DSLs
   const TOKEN_RE = captureRE(anyRE(
     SPACE_RE,
@@ -133,7 +133,7 @@ module.exports = (function(){
       // TODO: derive WHITESPACE_RE from further parameters to be
       // provided by the caller.
       this.toks = Token.tokensInTemplate(
-          template, 
+          template,
           new RegExp(TOKEN_RE.source, 'g'), // Note: Not frozen
           WHITESPACE_RE);
       let pos = 0;
@@ -159,11 +159,11 @@ module.exports = (function(){
     }
     eatNUMBER() { return this.eat(NUMBER_RE); }
     eatSTRING() { return this.eat(STRING_RE); }
-    eatIDENT() { 
+    eatIDENT() {
       if (this.pos >= this.toks.length) { return FAIL; }
       var token = this.toks[this.pos];
       if (typeof token === 'number') { return FAIL; }
-      if (allRE(IDENT_RE).test(token.text) && 
+      if (allRE(IDENT_RE).test(token.text) &&
           !this.keywords.has(token.text)) {
         this.pos++;
         return token.text;

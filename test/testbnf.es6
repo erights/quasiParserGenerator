@@ -3,7 +3,7 @@ var bootbnf = require('../src/bootbnf.es6');
 function doArith(bnf) {
   return bnf`
     start ::= expr EOF  ${(v,_) => v};
-    expr ::= 
+    expr ::=
       term "+" expr     ${(a,_,b) => (...subs) => a(...subs) + b(...subs)}
     | term;
     term ::=
@@ -40,7 +40,7 @@ var arithActions = doArith((_, ...actions) => actions);
 var metaCompile = bootbnf.doBnf((_, action0, ..._2) => action0);
 
 var arith0 = metaCompile(arithRules)(...arithActions);
-  
+
 testArith(arith0);
 
 testArith(doArith(bootbnf.doBnf(bootbnf)));
