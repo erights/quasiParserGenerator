@@ -79,7 +79,7 @@ module.exports = (function(){
 
     function peval(sexp) {
       const vtable = Object.freeze({
-        bnf: function(...rules) {
+        bnf(...rules) {
           // The following line also initializes tokenTypes and numSubs
           const rulesSrc = rules.map(peval).join('\n');
 
@@ -104,7 +104,7 @@ module.exports = (function(){
 })
 `);
         },
-        def: function(name, body) {
+        def(name, body) {
           // The following line also initializes vars
           const bodySrc = peval(body);
           return (
@@ -115,13 +115,13 @@ module.exports = (function(){
   return [pos, value];
 }`);
         },
-        empty: function() {
+        empty() {
           return `value = [];`;
         },
-        fail: function() {
+        fail() {
           return `value = FAIL;`;
         },
-        or: function(...choices) {
+        or(...choices) {
           const labelSrc = nextLabel('or');
           const choicesSrc = choices.map(peval).map(cSrc =>
 `${cSrc}
@@ -133,7 +133,7 @@ if (value !== FAIL) break ${labelSrc};`).join('\n');
   `)}
 }`);
         },
-        seq: function(...terms) {
+        seq(...terms) {
           const posSrc = nextVar('pos');
           const labelSrc = nextLabel('seq');
           const sSrc = nextVar('s');
@@ -154,14 +154,14 @@ ${labelSrc}: {
 }
 if ((value = ${vSrc}) === FAIL) pos = ${posSrc};`);
         },
-        act: function(terms, hole) {
+        act(terms, hole) {
           numSubs = Math.max(numSubs, hole + 1);
           const termsSrc = vtable.seq(...terms);
           return (
 `${termsSrc}
 if (value !== FAIL) value = act_${hole}(...value);`);
         },
-        '**': function(patt, sep) {
+        '**'(patt, sep) {
           const posSrc = nextVar('pos');
           const sSrc = nextVar('s');
           const pattSrc = peval(patt);
@@ -185,20 +185,23 @@ while (true) {
 }
 value = ${sSrc};`);
         },
-        '++': function(patt, sep) {
+        '++'(patt, sep) {
           const starSrc = vtable['**'](patt, sep);
           return (
 `${starSrc}
 if (value.length === 0) value = FAIL;`);
         },
-        '?': function(patt) {
+        '?'(patt) {
           return vtable['**'](patt, ['fail']);
         },
-        '*': function(patt) {
+        '*'(patt) {
           return vtable['**'](patt, ['empty']);
         },
-        '+': function(patt) {
+        '+'(patt) {
           return vtable['++'](patt, ['empty']);
+        },
+        'super'(ident) {
+          return `[pos, value] = super.rule_${ident}(pos);`;
         }
       });
 
@@ -208,13 +211,8 @@ if (value.length === 0) value = FAIL;`);
           return `[pos, value] = this.eat(pos, ${sexp});`;
         }
         if (sc.allRE(sc.IDENT_RE).test(sexp)) {
-          switch (sexp) {
-            // keywords would go here
-            default: {
-              // If it isn't a bnf keyword, assume it is a rule name.
-              return `[pos, value] = this.rule_${sexp}(pos);`;
-            }
-          }
+          // Assume a standalone identifier is a rule name.
+          return `[pos, value] = this.rule_${sexp}(pos);`;
         }
         throw new Error('unexpected: ' + sexp);
       }
@@ -260,6 +258,7 @@ if (value.length === 0) value = FAIL;`);
       | prim;
       prim ::=
         STRING | IDENT
+      | "super" "." IDENT            ${(_,_2,id) => ['super', id]}
       | "(" body ")"                 ${(_,b,_2) => b};
     `;
   }
@@ -275,7 +274,8 @@ if (value.length === 0) value = FAIL;`);
                   ['act',['prim',['or','"?"','"*"','"+"']], 6],
                   'prim']],
    ['def','prim',['or','STRING','IDENT',
-                  ['act',['"("','body','")"'], 7]]]];
+                  ['act',['"super"','"."','IDENT'], 7],
+                  ['act',['"("','body','")"'], 8]]]];
 
   const bnfActions = doBnf((_, ...actions) => actions);
 

@@ -115,8 +115,13 @@ module.exports = (function(){
   // Whitespace tokens to skip in cheap ad hoc DSLs
   const WHITESPACE_RE = anyRE(SPACE_RE, LINE_COMMENT_RE);
 
-  // The default abstract base Parser class for parser traits to extend.
-  // Since it is intended to be abstract, it has no start() method.
+
+
+
+  /**
+   * The default abstract base Parser class for parser traits to extend.
+   * Since it is intended to be abstract, it has no start() method.
+   */
   class Scanner {
     constructor(template, tokenTypeList) {
       this.keywords = new Set();
