@@ -95,7 +95,7 @@ module.exports = (function(){
     const scanner = new Scanner(template.raw, ${tokenTypeListSrc});
     ${indent(rulesSrc,`
     `)}
-    return rule_${rules[0][1]}();
+    return rule_${rules[0][1]}(0)[1];
   };
 })
 `);
@@ -104,11 +104,11 @@ module.exports = (function(){
           // The following line also initializes vars
           const bodySrc = peval(body);
           return (
-`function rule_${name}() {
+`function rule_${name}(pos) {
   ${takeVarsSrc()}
   ${indent(bodySrc,`
   `)}
-  return value;
+  return [pos, value];
 }
 `);
         },
@@ -143,13 +143,13 @@ ${sSrc}.push(value);`).join('\n');
           return (
 `${sSrc} = [];
 ${vSrc} = FAIL;
-${posSrc} = scanner.pos;
+${posSrc} = pos;
 ${labelSrc}: {
   ${indent(termsSrc,`
   `)}
   ${vSrc} = ${sSrc};
 }
-if ((value = ${vSrc}) === FAIL) scanner.pos = ${posSrc};`);
+if ((value = ${vSrc}) === FAIL) pos = ${posSrc};`);
         },
         act: function(terms, hole) {
           numSubs = Math.max(numSubs, hole + 1);
@@ -166,16 +166,16 @@ if (value !== FAIL) value = act_${hole}(...value);`);
           return (
 // after first iteration, backtrack to before the separator
 `${sSrc} = [];
-${posSrc} = scanner.pos;
+${posSrc} = pos;
 while (true) {
   ${indent(pattSrc,`
   `)}
   if (value === FAIL) {
-    scanner.pos = ${posSrc};
+    pos = ${posSrc};
     break;
   }
   ${sSrc}.push(value);
-  ${posSrc} = scanner.pos;
+  ${posSrc} = pos;
   ${indent(sepSrc,`
   `)}
   if (value === FAIL) break;
@@ -202,31 +202,31 @@ if (value.length === 0) value = FAIL;`);
       if (typeof sexp === 'string') {
         if (sc.allRE(sc.STRING_RE).test(sexp)) {
           tokenTypes.add(sexp);
-          return `value = scanner.eat(${sexp});`;
+          return `[pos, value] = scanner.eat(pos, ${sexp});`;
         }
         if (sc.allRE(sc.IDENT_RE).test(sexp)) {
           switch (sexp) {
             case 'NUMBER': {
               tokenTypes.add(sexp);
-              return `value = scanner.eatNUMBER();`;
+              return `[pos, value] = scanner.eatNUMBER(pos);`;
             }
             case 'STRING': {
               tokenTypes.add(sexp);
-              return `value = scanner.eatSTRING();`;
+              return `[pos, value] = scanner.eatSTRING(pos);`;
             }
             case 'IDENT': {
               tokenTypes.add(sexp);
-              return `value = scanner.eatIDENT();`;
+              return `[pos, value] = scanner.eatIDENT(pos);`;
             }
             case 'HOLE': {
-              return `value = scanner.eatHOLE();`;
+              return `[pos, value] = scanner.eatHOLE(pos);`;
             }
             case 'EOF': {
-              return `value = scanner.eatEOF();`;
+              return `[pos, value] = scanner.eatEOF(pos);`;
             }
             default: {
               // If it isn't a bnf keyword, assume it is a rule name.
-              return `value = rule_${sexp}();`;
+              return `[pos, value] = rule_${sexp}(pos);`;
             }
           }
         }

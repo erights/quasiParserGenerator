@@ -136,50 +136,42 @@ module.exports = (function(){
           template,
           new RegExp(TOKEN_RE.source, 'g'),  // Note: Not frozen
           WHITESPACE_RE);
-      let pos = 0;
-      Object.defineProperty(this, 'pos', {
-        get: () => { return pos; },
-        set: (oldPos) => { pos = oldPos; },
-        enumerable: true,
-        configurable: false
-      });
       def(this);
     }
 
-    eat(patt) {
-      if (this.pos >= this.toks.length) { return FAIL; }
-      var token = this.toks[this.pos];
-      if (typeof token === 'number') { return FAIL; }
+    eat(pos, patt) {
+      if (pos >= this.toks.length) { return [pos, FAIL]; }
+      var token = this.toks[pos];
+      if (typeof token === 'number') { return [pos, FAIL]; }
       if ((typeof patt === 'string' && patt === token.text) ||
           allRE(patt).test(token.text)) {
-        this.pos++;
-        return token.text;
+        return [pos + 1, token.text];
       }
-      return FAIL;
+      return [pos, FAIL];
     }
-    eatNUMBER() { return this.eat(NUMBER_RE); }
-    eatSTRING() { return this.eat(STRING_RE); }
-    eatIDENT() {
-      if (this.pos >= this.toks.length) { return FAIL; }
-      var token = this.toks[this.pos];
-      if (typeof token === 'number') { return FAIL; }
+    eatNUMBER(pos) { return this.eat(pos, NUMBER_RE); }
+    eatSTRING(pos) { return this.eat(pos, STRING_RE); }
+    eatIDENT(pos) {
+      if (pos >= this.toks.length) { return [pos, FAIL]; }
+      var token = this.toks[pos];
+      if (typeof token === 'number') { return [pos, FAIL]; }
       if (allRE(IDENT_RE).test(token.text) &&
           !this.keywords.has(token.text)) {
-        this.pos++;
-        return token.text;
+        return [pos + 1, token.text];
       }
-      return FAIL;
+      return [pos, FAIL];
     }
-    eatHOLE() {
-      if (this.pos >= this.toks.length) { return FAIL; }
-      var token = this.toks[this.pos];
+    eatHOLE(pos) {
+      if (pos >= this.toks.length) { return [pos, FAIL]; }
+      var token = this.toks[pos];
       if (typeof token === 'number') {
-        this.pos++;
-        return token;
+        return [pos + 1, token];
       }
-      return FAIL;
+      return [pos, FAIL];
     }
-    eatEOF() { return this.pos >= this.toks.length ? EOF : FAIL; }
+    eatEOF(pos) {
+      return [pos, pos >= this.toks.length ? EOF : FAIL];
+    }
   }
 
 
