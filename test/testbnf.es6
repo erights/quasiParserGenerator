@@ -1,7 +1,7 @@
-const bootbnf = require('../src/bootbnf.es6');
+const bnf = require('../src/bootbnf.es6');
 
-function doArith(bnf) {
-  return bnf`
+function doArith(bnfParam) {
+  return bnfParam`
     start ::= expr EOF  ${(v,_) => v};
     expr ::=
       term "+" expr     ${(a,_,b) => (...subs) => a(...subs) + b(...subs)}
@@ -13,7 +13,7 @@ function doArith(bnf) {
    `;
 }
 
-const arith = doArith(bootbnf);
+const arith = doArith(bnf);
 
 function testArith(arith) {
   if (arith`1 + (2 + ${3*11} + ${55-11}) + 4` !== 84) {
@@ -37,29 +37,26 @@ const arithRules = [
 
 const arithActions = doArith((_, ...actions) => actions);
 
-const metaCompile = bootbnf.doBnf((_, action0, ..._2) => action0);
+const metaCompile = bnf.doBnf((_, action0, ..._2) => action0);
 
 const arith0 = metaCompile(arithRules)(...arithActions);
 
 testArith(arith0);
 
-testArith(doArith(bootbnf.doBnf(bootbnf)));
+testArith(doArith(bnf.doBnf(bnf)));
 
 
 
 
-const ArithParser = arith.Parser;
-
-const subFragment = bootbnf`
+const subFrag = bnf`
   expr ::=
     term "-" expr     ${(a,_,b) => (...subs) => a(...subs) - b(...subs)}
   | super.expr;
 `;
 
-const subTrait = subFragment.trait;
+const subArith = subFrag.extends(arith);
 
-const SubParser = subTrait(ArithParser);
 
-const subArith = bootbnf.quasifyParser(SubParser);
-
+// Note: right associative, so currently the right answer is -4.
 console.log(subArith`1 + 2 - 3 + 4`);
+

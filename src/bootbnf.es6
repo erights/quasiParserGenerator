@@ -21,22 +21,6 @@ module.exports = (function(){
     return closedFunc(...names.map(n => env[n]));
   }
 
-  function quasiMemo(quasiCurry) {
-    const wm = new WeakMap();
-    return function(template, ...subs) {
-      let quasiRest = wm.get(template);
-      if (!quasiRest) {
-        quasiRest = quasiCurry(template);
-        wm.set(template, quasiRest);
-      }
-      if (typeof quasiRest !== 'function') {
-        throw new Error(`${typeof quasiRest}: ${quasiRest}`);
-      }
-      return quasiRest(...subs);
-    }
-  }
-
-
   function simple(prefix, list) {
     if (list.length === 0) { return ['empty']; }
     if (list.length === 1) { return list[0]; }
@@ -92,8 +76,8 @@ module.exports = (function(){
           return (
 `(function(${paramSrcs.join(', ')}) {
   return BaseParser => class extends BaseParser {
-    constructor(template) {
-      super(template, ${tokenTypeListSrc});
+    constructor(template, tokenTypeList=[]) {
+      super(template, ${tokenTypeListSrc}.concat(tokenTypeList));
     }
     start() {
       return this.rule_${rules[0][1]}(0)[1];
@@ -222,6 +206,22 @@ if (value.length === 0) value = FAIL;`);
     return peval(sexp);
   }
 
+
+  function quasiMemo(quasiCurry) {
+    const wm = new WeakMap();
+    return function(template, ...subs) {
+      let quasiRest = wm.get(template);
+      if (!quasiRest) {
+        quasiRest = quasiCurry(template);
+        wm.set(template, quasiRest);
+      }
+      if (typeof quasiRest !== 'function') {
+        throw new Error(`${typeof quasiRest}: ${quasiRest}`);
+      }
+      return quasiRest(...subs);
+    }
+  }
+
   function quasifyParser(Parser) {
     function baseCurry(template) {
       const parser = new Parser(template);
@@ -231,6 +231,8 @@ if (value.length === 0) value = FAIL;`);
     quasiParser.Parser = Parser;
     return quasiParser;
   }
+
+  const defaultQuasiParser = quasifyParser(sc.Scanner);
 
   function metaCompile(baseRules, _=void 0) {
     const baseAST = ['bnf', ...baseRules];
@@ -242,15 +244,19 @@ if (value.length === 0) value = FAIL;`);
     });
     return function(...baseActions) {
       const parserTrait = makeParserTrait(...baseActions);
-      const Parser = parserTrait(sc.Scanner);
-      const quasiParser = quasifyParser(Parser);
-      quasiParser.trait = parserTrait;
+      function extend(baseQuasiParser) {
+        const Parser = parserTrait(baseQuasiParser.Parser);
+        return quasifyParser(Parser);
+      }
+      const quasiParser = extend(defaultQuasiParser);
+      quasiParser.extends = extend;
       return quasiParser;
     };
   }
 
-  function doBnf(bnf) {
-    return bnf`
+
+  function doBnf(bnfParam) {
+    return bnfParam`
       bnf ::= rule+ EOF              ${metaCompile};
       rule ::= IDENT "::=" body ";"  ${(name,_,body,_2) => ['def', name, body]};
       body ::= choice ** "|"         ${list => simple('or', list)};
@@ -285,9 +291,9 @@ if (value.length === 0) value = FAIL;`);
 
   const bnfActions = doBnf((_, ...actions) => actions);
 
-  const bootbnf = metaCompile(bnfRules)(...bnfActions);
-  bootbnf.doBnf = doBnf;
-  bootbnf.quasifyParser = quasifyParser;
+  const bnf = metaCompile(bnfRules)(...bnfActions);
+  bnf.doBnf = doBnf;
+  bnf.quasifyParser = quasifyParser;
 
-  return def(bootbnf);
+  return def(bnf);
 }());

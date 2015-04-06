@@ -119,11 +119,10 @@ module.exports = (function(){
 
 
   /**
-   * The default abstract base Parser class for parser traits to extend.
-   * Since it is intended to be abstract, it has no start() method.
+   * The default base Parser class for parser traits to extend.
    */
   class Scanner {
-    constructor(template, tokenTypeList) {
+    constructor(template, tokenTypeList=[]) {
       this.keywords = new Set();
       this.otherTokenTypes = new Set();
       tokenTypeList.forEach(tt => {
@@ -144,6 +143,9 @@ module.exports = (function(){
           new RegExp(TOKEN_RE.source, 'g'),  // Note: Not frozen
           WHITESPACE_RE);
       def(this);
+    }
+    start() {
+      return this.toks.map(token => token.text);
     }
 
     eat(pos, patt) {
