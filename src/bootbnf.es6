@@ -222,10 +222,20 @@ if (value.length === 0) value = FAIL;`);
     return peval(sexp);
   }
 
+  function quasifyParser(Parser) {
+    function baseCurry(template) {
+      const parser = new Parser(template);
+      return parser.start();
+    }
+    const quasiParser = quasiMemo(baseCurry);
+    quasiParser.Parser = Parser;
+    return quasiParser;
+  }
 
   function metaCompile(baseRules, _=void 0) {
     const baseAST = ['bnf', ...baseRules];
     const parserTraitMakerSrc = compile(baseAST);
+//console.log('\n\n' + parserTraitMakerSrc + '\n\n');
     const makeParserTrait = confine(parserTraitMakerSrc, {
       Scanner: sc.Scanner,
       FAIL: sc.FAIL
@@ -233,11 +243,7 @@ if (value.length === 0) value = FAIL;`);
     return function(...baseActions) {
       const parserTrait = makeParserTrait(...baseActions);
       const Parser = parserTrait(sc.Scanner);
-      function baseCurry(template) {
-        const parser = new Parser(template);
-        return parser.start();
-      }
-      const quasiParser = quasiMemo(baseCurry);
+      const quasiParser = quasifyParser(Parser);
       quasiParser.trait = parserTrait;
       return quasiParser;
     };
@@ -257,8 +263,8 @@ if (value.length === 0) value = FAIL;`);
       | prim ("?" | "*" | "+")       ${(patt,q) => [q, patt]}
       | prim;
       prim ::=
-        STRING | IDENT
-      | "super" "." IDENT            ${(_,_2,id) => ['super', id]}
+        "super" "." IDENT            ${(sup,_2,id) => [sup, id]}
+      | IDENT | STRING
       | "(" body ")"                 ${(_,b,_2) => b};
     `;
   }
@@ -273,14 +279,15 @@ if (value.length === 0) value = FAIL;`);
    ['def','term',['or',['act',['prim',['or','"**"','"++"'],'prim'], 5],
                   ['act',['prim',['or','"?"','"*"','"+"']], 6],
                   'prim']],
-   ['def','prim',['or','STRING','IDENT',
-                  ['act',['"super"','"."','IDENT'], 7],
+   ['def','prim',['or',['act',['"super"','"."','IDENT'], 7],
+                  'IDENT','STRING',
                   ['act',['"("','body','")"'], 8]]]];
 
   const bnfActions = doBnf((_, ...actions) => actions);
 
   const bootbnf = metaCompile(bnfRules)(...bnfActions);
   bootbnf.doBnf = doBnf;
+  bootbnf.quasifyParser = quasifyParser;
 
   return def(bootbnf);
 }());

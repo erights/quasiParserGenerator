@@ -1,4 +1,4 @@
-var bootbnf = require('../src/bootbnf.es6');
+const bootbnf = require('../src/bootbnf.es6');
 
 function doArith(bnf) {
   return bnf`
@@ -13,7 +13,7 @@ function doArith(bnf) {
    `;
 }
 
-var arith = doArith(bootbnf);
+const arith = doArith(bootbnf);
 
 function testArith(arith) {
   if (arith`1 + (2 + ${3*11} + ${55-11}) + 4` !== 84) {
@@ -26,7 +26,7 @@ testArith(arith);
 
 //---------------
 
-var arithRules = [
+const arithRules = [
  ['def','start',['act',['expr','EOF'],0]],
  ['def','expr',['or',['act',['term','"+"','expr'],1],
                 'term']],
@@ -35,12 +35,31 @@ var arithRules = [
                 ['act',['"("','expr','")"'],4]]]];
 
 
-var arithActions = doArith((_, ...actions) => actions);
+const arithActions = doArith((_, ...actions) => actions);
 
-var metaCompile = bootbnf.doBnf((_, action0, ..._2) => action0);
+const metaCompile = bootbnf.doBnf((_, action0, ..._2) => action0);
 
-var arith0 = metaCompile(arithRules)(...arithActions);
+const arith0 = metaCompile(arithRules)(...arithActions);
 
 testArith(arith0);
 
 testArith(doArith(bootbnf.doBnf(bootbnf)));
+
+
+
+
+const ArithParser = arith.Parser;
+
+const subFragment = bootbnf`
+  expr ::=
+    term "-" expr     ${(a,_,b) => (...subs) => a(...subs) - b(...subs)}
+  | super.expr;
+`;
+
+const subTrait = subFragment.trait;
+
+const SubParser = subTrait(ArithParser);
+
+const subArith = bootbnf.quasifyParser(SubParser);
+
+console.log(subArith`1 + 2 - 3 + 4`);
