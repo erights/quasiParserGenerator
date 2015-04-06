@@ -48,13 +48,12 @@ testArith(doArith(bnf.doBnf(bnf)));
 
 
 
-const subFrag = bnf`
+const subArith = bnf.extends(arith)`
   expr ::=
     term "-" expr     ${(a,_,b) => (...subs) => a(...subs) - b(...subs)}
   | super.expr;
 `;
 
-const subArith = subFrag.extends(arith);
 
 
 // Note: right associative, so currently the right answer is -4.

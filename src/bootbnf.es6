@@ -244,12 +244,17 @@ if (value.length === 0) value = FAIL;`);
     });
     return function(...baseActions) {
       const parserTrait = makeParserTrait(...baseActions);
-      function extend(baseQuasiParser) {
+      function _asExtending(baseQuasiParser) {
         const Parser = parserTrait(baseQuasiParser.Parser);
         return quasifyParser(Parser);
       }
-      const quasiParser = extend(defaultQuasiParser);
-      quasiParser.extends = extend;
+      const quasiParser = _asExtending(defaultQuasiParser);
+      quasiParser._asExtending = _asExtending;
+      function _extends(baseQuasiParser) {
+        return (template, ...subs) => 
+          quasiParser(template, ...subs)._asExtending(baseQuasiParser);
+      }
+      quasiParser.extends = _extends;
       return quasiParser;
     };
   }
