@@ -49,6 +49,7 @@ testArith(doArith(bnf.doBnf(bnf)));
 
 
 const subArith = bnf.extends(arith)`
+  start ::= super.start;
   expr ::=
     term "-" expr     ${(a,_,b) => (...subs) => a(...subs) - b(...subs)}
   | super.expr;
