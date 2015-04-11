@@ -51,8 +51,8 @@ The grammar for our bnf language, extracted from src/bootbnf.es6, expressed in i
       | prim ("?" | "*" | "+")       ${(patt,q) => [q, patt]}
       | prim;
       prim ::=
-        STRING | IDENT
-      | "NUMBER" | "STRING" | "IDENT" | "HOLE" | "EOF"
+        "super" "." IDENT            ${(sup,_2,id) => [sup, id]}
+      | IDENT | STRING
       | "(" body ")"                 ${(_,b,_2) => b};
     `
 ```

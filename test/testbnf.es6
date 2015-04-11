@@ -57,5 +57,7 @@ const subArith = bnf.extends(arith)`
 
 
 // Note: right associative, so currently the right answer is -4.
-console.log(subArith`1 + 2 - 3 + 4`);
+if (subArith`1 + 2 - 3 + 4` !== -4) {
+  throw new Error('Possible problem with grammar inheritance');
+}
 

@@ -1,6 +1,5 @@
 const to5 = require('babel');
 const sc = require('./scanner.es6');
-const Mapish = require('./Mapish');
 
 module.exports = (function(){
   "use strict";
