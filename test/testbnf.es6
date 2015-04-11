@@ -47,18 +47,44 @@ testArith(doArith(bnf.doBnf(bnf)));
 
 
 
+const QuasiJSON = bnf`
+  start ::= value EOF     ${(v,_) => v};
+  value ::=
+    prim                  ${p => (..._) => JSON.parse(p)}
+  | array 
+  | record                # json.org calls this "object"
+  | HOLE                  ${h => (...subs) => subs[h]};
+  prim ::= STRING | NUMBER | "true" | "false" | "null";
 
-const subArith = bnf.extends(arith)`
-  start ::= super.start;
-  expr ::=
-    term "-" expr     ${(a,_,b) => (...subs) => a(...subs) - b(...subs)}
-  | super.expr;
+  array ::= "[" value ** "," "]"
+                          ${(_,vs,_2) => (...subs) => vs.map(v => v(...subs))};
+  record ::= "{" (key ":" value) ** "," "}"
+                          ${(_,pairs,_2) => (...subs) => {
+                              const result = {};
+                              for (let [k,_,v] of pairs) { 
+                                result[k(...subs)] = v(...subs);
+                              }
+                              return result;
+                          }};
+  key ::= 
+    STRING                ${p => (..._) => JSON.parse(p)}
+  | HOLE                  ${h => (...subs) => subs[h]};
 `;
 
 
+const piece = QuasiJSON`{${"foo"}: [${33}, 44]}`;
 
-// Note: right associative, so currently the right answer is -4.
-if (subArith`1 + 2 - 3 + 4` !== -4) {
-  throw new Error('Possible problem with grammar inheritance');
-}
+console.log(piece);
 
+
+const JSONPlus = bnf.extends(QuasiJSON)`
+  start ::= super.start;
+  key ::=
+    super.key
+  | IDENT                 ${id => (..._) => id};
+`;
+
+
+const thing = JSONPlus`{"bar": ${piece}, baz: 55}`;
+
+console.log(thing);

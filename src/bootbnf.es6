@@ -215,6 +215,10 @@ if (value.length === 0) value = FAIL;`);
         wm.set(template, quasiRest);
       }
       if (typeof quasiRest !== 'function') {
+        console.log(`
+-------template--------
+${JSON.stringify(template, void 0, ' ')}
+-------`);
         throw new Error(`${typeof quasiRest}: ${quasiRest}`);
       }
       return quasiRest(...subs);
