@@ -1,4 +1,5 @@
-const bnf = require('../src/bootbnf.es6');
+const bootbnf = require('../src/bootbnf.es6');
+const bnf = bootbnf.bnf;
 
 function doArith(bnfParam) {
   return bnfParam`
@@ -16,7 +17,7 @@ function doArith(bnfParam) {
 const arith = doArith(bnf);
 
 function testArith(arith) {
-  if (arith`1 + (2 + ${3*11} + ${55-11}) + 4` !== 84) {
+  if (arith`1 + (-2 + ${3*11} + ${55-11}) + 4` !== 80) {
     throw Error('arith template handler did not work');
   }
 };
@@ -37,13 +38,13 @@ const arithRules = [
 
 const arithActions = doArith((_, ...actions) => actions);
 
-const metaCompile = bnf.doBnf((_, action0, ..._2) => action0);
 
-const arith0 = metaCompile(arithRules)(...arithActions);
+
+const arith0 = bootbnf.metaCompile(arithRules)(...arithActions);
 
 testArith(arith0);
 
-testArith(doArith(bnf.doBnf(bnf)));
+testArith(doArith(bootbnf.doBnf(bnf)));
 
 
 
@@ -85,6 +86,6 @@ const JSONPlus = bnf.extends(QuasiJSON)`
 `;
 
 
-const thing = JSONPlus`{"bar": ${piece}, baz: 55}`;
+const thing = JSONPlus`{"bar": ${piece}, baz: [55]}`;
 
 console.log(thing);

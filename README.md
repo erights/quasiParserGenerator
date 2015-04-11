@@ -7,7 +7,8 @@ Nevertheless, until it is replaced, the template string tag for generating templ
 The input to our parser generator is expressed as a bnf template string, and the result is a template string tag for parsing template strings expressed in the grammar described by that bnf. The name of a template string tag usually names the language in which the template is written, which in our case is ```bnf.``` An example extracted from test/testbnf.es6:
 
 ```javascript
-var bnf = require('../src/bootbnf.es6');
+var bootbnf = require('../src/bootbnf.es6');
+var bnf = bootbnf.bnf;
 
 var arith = bnf`
     start ::= expr EOF  ${(v,_) => v};
@@ -39,7 +40,7 @@ The ```HOLE``` production recognizes a substitution hole as a token type, and it
 The grammar for our bnf language, extracted from src/bootbnf.es6, expressed in itself, is
 
 ```javascript
-  bnf`bnf ::= rule+ EOF              ${metaCompile};
+  bnf`start ::= rule+ EOF            ${metaCompile};
       rule ::= IDENT "::=" body ";"  ${(name,_,body,_2) => ['def', name, body]};
       body ::= choice ** "|"         ${list => simple('or', list)};
       choice ::=
@@ -65,14 +66,45 @@ The ```**``` operator is an infix generalization of the usual postfix ```*```, w
 
 Quoted identifiers are keywords, and are therefore not recognized by the ```IDENT``` production within that grammer. Other quoted strings are literal tokens, but currently, only if they fit within the cheezy rules for recognizing operator tokens. See src/scanner.es6 for the current specifics. Instead, the operator token recognizition for a given grammar should be based on which quoted strings actually appear in the grammar.
 
+# Grammar Inheritance
+
+In addition to the rules it defines, our bnf grammar's own self description uses the identifiers ```EOF``` ,```IDENT```,  ```HOLE```, and ```STRING```. However, the only keyword it defines in ```"super"``` which it does not use. The reason is that this grammar inherits from ```bootbnf.defaultBaseGrammar```. The ```defaultBaseGrammar``` provides the rules for ```EOF``` ,```IDENT```,  ```HOLE```, and ```STRING```, as well as the expected rule for ```NUMBER```. The tags defined by the ```bnf``` tag also inherit from ```bootbnf.defaultBaseGrammar``` by default.
+
+Each grammar tag also has an ```extends``` method for specifying a base grammar explicitly. For example, test/testbnf.es6 defines a bnf grammar for JSON called ```QuasiJSON```. The relevant parts are
+
+```javascript
+const QuasiJSON = bnf`
+  start ::= value EOF     ${(v,_) => v};
+  ...
+  record ::= "{" (key ":" value) ** "," "}" ...;
+  ...
+  key ::= 
+    STRING                ${p => (..._) => JSON.parse(p)}
+  | HOLE                  ${h => (...subs) => subs[h]};
+`;
+
+```
+
+As with actual JSON, this grammar has the irritating feature that keys of records must be quoted strings. We can create a new grammar that extends this grammar so that identifiers can appear as keys without quotation:
+
+```javascript
+const JSONPlus = bnf.extends(QuasiJSON)`
+  start ::= super.start;
+  key ::=
+    super.key
+  | IDENT                 ${id => (..._) => id};
+`;
+```
+
+The ```bnf.extends(QuasiJSON)``` expression produces a template string tag, like the bnf tag itself, except that it defines a grammar that inherits from ```QuasiJSON``` rather than ```defaultBaseGrammar```. Within this derived grammar, the production name ```super.key``` refers to the ```key``` production of the base grammar. In the context of the derived grammar, unqualified references in the base grammar to the ```key``` production refer to the derived grammar's overriding ```key``` production.
+
+Grammar inheritance is implemented by ES6 (aka EcmaScript 2015) class inheritance. Each grammar defined by these mechanisms has a ```Parser``` property whose value is the actual class for that tag's parser. For example, ```bnf.Parser``` is a parser class that inherits from the ```defaultBaseGrammar.Parser``` class and does the actual parsing work of our ```bnf``` tag.
 
 # Why is this only a proof of concept?
 
-The lexer's rules and token types are built in.
+The grammar is essentially a PEG (Parsing Expression Grammar), where "```|```" is a prioritied choice operator and backtracking happens only within a rule. Although it is set up to support the memoization of a Packrat parser, it does not yet do this memoization, and so potentially has exponential parse times.
 
-The generated parser has most of the expense of a full backtracking parser with none of the correctness.
-
-Ambiguous grammars are neither detected nor parsed correctly. Instead, the alternatives are tried in order (like a PEG), but an earlier successful match will not be backtracked because of later failures. In this toy, "|" is a prioritized committed choice. That's why, for example, the bare ```prim``` rule comes last above among the choices for ```term```.
+No support for left recursion.
 
 Errors within the input to ```bnf``` are hard to debug.
 

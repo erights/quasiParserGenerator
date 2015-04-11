@@ -79,7 +79,19 @@ module.exports = (function(){
       super(template, ${tokenTypeListSrc}.concat(tokenTypeList));
     }
     start() {
-      return this.rule_${rules[0][1]}(0)[1];
+      // rules[0] is the ast of the first rule, which has the form
+      // ["def", ruleName, body], so rules[0][1] is the name of the
+      // start rule. We prepend "rule_" to get the name of the JS
+      // method that implements the start rule. We invoke it with
+      // (0) so that it will parse starting at position 0. It returns
+      // a pair of the final position (after the last non-EOF token
+      // parsed), and the semantic value. On failure to parse, the
+      // semantic value will be FAIL.
+      const pair = this.rule_${rules[0][1]}(0);
+      if (pair[1] == FAIL) {
+        this.syntaxError(0, pair[0]);
+      }
+      return pair[1];
     }
     ${indent(rulesSrc,`
     `)}
@@ -215,10 +227,6 @@ if (value.length === 0) value = FAIL;`);
         wm.set(template, quasiRest);
       }
       if (typeof quasiRest !== 'function') {
-        console.log(`
--------template--------
-${JSON.stringify(template, void 0, ' ')}
--------`);
         throw new Error(`${typeof quasiRest}: ${quasiRest}`);
       }
       return quasiRest(...subs);
@@ -235,7 +243,7 @@ ${JSON.stringify(template, void 0, ' ')}
     return quasiParser;
   }
 
-  const defaultQuasiParser = quasifyParser(sc.Scanner);
+  const defaultBaseGrammar = quasifyParser(sc.Scanner);
 
   function metaCompile(baseRules, _=void 0) {
     const baseAST = ['bnf', ...baseRules];
@@ -251,7 +259,7 @@ ${JSON.stringify(template, void 0, ' ')}
         const Parser = parserTrait(baseQuasiParser.Parser);
         return quasifyParser(Parser);
       }
-      const quasiParser = _asExtending(defaultQuasiParser);
+      const quasiParser = _asExtending(defaultBaseGrammar);
       quasiParser._asExtending = _asExtending;
       function _extends(baseQuasiParser) {
         return (template, ...subs) => 
@@ -265,7 +273,7 @@ ${JSON.stringify(template, void 0, ' ')}
 
   function doBnf(bnfParam) {
     return bnfParam`
-      bnf ::= rule+ EOF              ${metaCompile};
+      start ::= rule+ EOF            ${metaCompile};
       rule ::= IDENT "::=" body ";"  ${(name,_,body,_2) => ['def', name, body]};
       body ::= choice ** "|"         ${list => simple('or', list)};
       choice ::=
@@ -284,7 +292,7 @@ ${JSON.stringify(template, void 0, ' ')}
   }
 
   const bnfRules = [
-   ['def','bnf',['act',[['+','rule'],'EOF'], 0]],
+   ['def','start',['act',[['+','rule'],'EOF'], 0]],
    ['def','rule',['act',['IDENT','"::="','body','";"'], 1]],
    ['def','body',['act',[['**','choice','"|"']], 2]],
    ['def','choice',['or',['act',['seq','HOLE'], 3],
@@ -300,8 +308,12 @@ ${JSON.stringify(template, void 0, ' ')}
   const bnfActions = doBnf((_, ...actions) => actions);
 
   const bnf = metaCompile(bnfRules)(...bnfActions);
-  bnf.doBnf = doBnf;
-  bnf.quasifyParser = quasifyParser;
 
-  return def(bnf);
+  return def({
+    bnf, 
+    doBnf,
+    metaCompile,
+    quasifyParser,
+    defaultBaseGrammar
+  });
 }());

@@ -10,7 +10,7 @@ module.exports = (function(){
 
   // JSON compat group. See json.org
   const SPACE_RE = /\s+/;
-  const NUMBER_RE = /\d+(?:\.\d+)?(?:[eE]-?\d+)?/;
+  const NUMBER_RE = /-?\d+(?:\.\d+)?(?:[eE]-?\d+)?/;
   // Note no \' (escaped single quote) in accord with JSON.
   const CHAR_RE = /[^\"\\]|\\"|\\\\|\\\/|\\b|\\f|\\n|\\r|\\t|\\u[\da-fA-F]{4}/
   const STRING_RE_SRC = '\\"(?:' + CHAR_RE.source +  ')*\\"';
@@ -123,6 +123,7 @@ module.exports = (function(){
    */
   class Scanner {
     constructor(template, tokenTypeList=[]) {
+      this.template = template;
       this.keywords = new Set();
       this.otherTokenTypes = new Set();
       tokenTypeList.forEach(tt => {
@@ -136,8 +137,6 @@ module.exports = (function(){
       def(this.otherTokenTypes);  // TODO: should also freeze set contents
 
       // TODO: derive TOKEN_RE from otherTokenTypes
-      // TODO: derive WHITESPACE_RE from further parameters to be
-      // provided by the caller.
       this.toks = Token.tokensInTemplate(
           template.raw,
           new RegExp(TOKEN_RE.source, 'g'),  // Note: Not frozen
@@ -146,6 +145,16 @@ module.exports = (function(){
     }
     start() {
       return this.toks.map(token => token.text);
+    }
+
+    syntaxError(start, after, msg='failed to parse') {
+        console.log(`
+-------template--------
+${JSON.stringify(this.template, void 0, ' ')}
+-------`);
+      const firstTok = this.toks[start];
+      const lastTok = this.toks[Math.max(start, after - 1)];
+      throw new SyntaxError(`from ${firstTok} to ${lastTok}`);
     }
 
     eat(pos, patt) {
