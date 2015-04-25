@@ -2,9 +2,7 @@
 module.exports = (function(){
   "use strict";
 
-  // TODO: Should test if in SES, and use SES's def if so.
-  const def = Object.freeze;
-
+  const {def} = require('./sesshim.es6');
   const FAIL = def({toString: () => 'FAIL'});
   const EOF = def({toString: () => 'EOF'});
 

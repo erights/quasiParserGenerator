@@ -1,24 +1,9 @@
-const to5 = require('babel');
-const sc = require('./scanner.es6');
-
+// Options: --free-variable-checker --require --validate
 module.exports = (function(){
   "use strict";
 
-  // TODO: Should test if in SES, and use SES's def if so.
-  const def = Object.freeze;
-
-  // TODO: Should test if in SES, and use SES's confine if so.
-  function confine(expr, env) {
-    const names = Object.getOwnPropertyNames(env);
-    let closedFuncSrc =
-`(function(${names.join(',')}) {
-  "use strict";
-  return ${expr};
-})`
-    closedFuncSrc = to5.transform(closedFuncSrc).code;
-    const closedFunc = (1,eval)(closedFuncSrc);
-    return closedFunc(...names.map(n => env[n]));
-  }
+  const {def, confine} = require('./sesshim.es6');
+  const sc = require('./scanner.es6');
 
   function simple(prefix, list) {
     if (list.length === 0) { return ['empty']; }
