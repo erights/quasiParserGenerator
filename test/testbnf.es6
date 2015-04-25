@@ -5,6 +5,8 @@ module.exports = (function(){
   const {def} = require('../src/sesshim.es6');
   const bootbnf = require('../src/bootbnf.es6');
   const bnf = bootbnf.bnf;
+  const scannerless = require('../src/scannerless.es6');
+
   
   function doArith(bnfParam) {
     return bnfParam`

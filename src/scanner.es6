@@ -84,12 +84,13 @@ module.exports = (function(){
     static tokensInTemplate(template, RE, skipRE) {
       const numSubs = template.length - 1;
       const result = [];
-      for (let i = 0; i < numSubs; i++) {
-        result.push(...this.tokensInSegment(i, template[i], RE, skipRE));
-        result.push(i); // bare hole number
+      for (let segnum = 0; segnum <= numSubs; segnum++) {
+        result.push(...this.tokensInSegment(segnum, template[segnum],
+                                            RE, skipRE));
+        if (segnum < numSubs) {
+          result.push(segnum); // bare hole number
+        }
       }
-      result.push(...this.tokensInSegment(
-          numSubs, template[numSubs], RE, skipRE));
       return result;
     }
   }
@@ -114,10 +115,14 @@ module.exports = (function(){
   const WHITESPACE_RE = anyRE(SPACE_RE, LINE_COMMENT_RE);
 
 
-
-
   /**
-   * The default base Parser class for parser traits to extend.
+   * The default base Parser class for parser traits to extend. This
+   * provides a simple conventional lexer, where the production rules
+   * correspond to conventional token types. Parsers defined using the
+   * <tt>bootbnf.bnf</tt> tag that extend this one generally define
+   * the second level of a two level grammar. It you wish to inheric
+   * from Scanner in order to define a derived lexer, you probably
+   * need to use EcmaScript class inheritance directly.
    */
   class Scanner {
     constructor(template, tokenTypeList=[]) {
@@ -146,7 +151,7 @@ module.exports = (function(){
     }
 
     syntaxError(start, after, msg='failed to parse') {
-        console.log(`
+      console.log(`
 -------template--------
 ${JSON.stringify(this.template, void 0, ' ')}
 -------`);
