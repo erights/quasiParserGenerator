@@ -5,7 +5,7 @@ module.exports = (function(){
   const {def} = require('../src/sesshim.es6');
   const bootbnf = require('../src/bootbnf.es6');
   const bnf = bootbnf.bnf;
-  const scannerless = require('../src/scannerless.es6');
+  const {scannerless} = require('../src/scannerless.es6');
 
   
   function doArith(bnfParam) {
@@ -96,6 +96,16 @@ module.exports = (function(){
   const thing = JSONPlus`{"bar": ${piece}, baz: [55]}`;
   
   console.log(thing);
+
+
+  const scannerish = bnf.extends(scannerless)`
+    start ::= token* EOF     ${toks => (..._) => toks};
+    token ::= CHAR | HOLE;
+  `;
+
+  const tks = scannerish`hello${3}world`;
+
+  console.log(tks);
   
   return def({});
 }());

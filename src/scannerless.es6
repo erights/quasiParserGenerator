@@ -32,10 +32,10 @@ module.exports = (function(){
       return result;
     }
     find(pos) {
-      const numSubs = template.length - 1;
+      const numSubs = this.template.length - 1;
       let relpos = pos;
       for (let segnum = 0; segnum <= numSubs; segnum++) {
-        const segment = template[segnum];
+        const segment = this.template[segnum];
         const seglen = segment.length;
         if (relpos < seglen) {
           return [segnum, relpos];
@@ -58,7 +58,7 @@ ${JSON.stringify(this.template, void 0, ' ')}
     eat(pos, patt) {
       const found = this.find(pos);
       if (Array.isArray(found)) {
-        const specimen = template[found[0]].slice(found[1]);
+        const specimen = this.template[found[0]].slice(found[1]);
         if (typeof pass === 'string') {
           if (specimen.startsWith(patt)) {
             return [pos + patt.length, patt];
@@ -70,7 +70,7 @@ ${JSON.stringify(this.template, void 0, ' ')}
     rule_CHAR(pos) {
       const found = this.find(pos);
       if (Array.isArray(found)) {
-        return [pos + 1, template[found[0]][found[1]]];
+        return [pos + 1, this.template[found[0]][found[1]]];
       }
       return [pos, FAIL];
     }
@@ -88,6 +88,7 @@ ${JSON.stringify(this.template, void 0, ' ')}
   const scannerless = quasifyParser(Scannerless);
 
   return def({
-    Scannerless
+    Scannerless,
+    scannerless
   });
 }());
