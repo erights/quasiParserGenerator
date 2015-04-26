@@ -21,7 +21,7 @@ module.exports = (function(){
 
     // generated names
     // act_${i}      action parameter
-    // rule_${name}  function from bnf rule
+    // rule_${name}  method from bnf rule
     // seq_${i}      sequence failure label
     // or_${i}       choice success label
     // pos_${i}      backtrack token index
@@ -182,6 +182,9 @@ if (value.length === 0) value = FAIL;`);
         },
         'super'(ident) {
           return `[pos, value] = super.rule_${ident}(pos);`;
+        },
+        apply(hole) {
+          return `[pos, value] = act_${hole}.call(this, pos);`;
         }
       });
 
@@ -270,7 +273,8 @@ if (value.length === 0) value = FAIL;`);
       | prim ("?" | "*" | "+")       ${(patt,q) => [q, patt]}
       | prim;
       prim ::=
-        "super" "." IDENT            ${(sup,_2,id) => [sup, id]}
+        "super" "." IDENT            ${(sup,_,id) => [sup, id]}
+      | "this" "." HOLE              ${(_,_2,hole) => ['apply', hole]}
       | IDENT | STRING
       | "(" body ")"                 ${(_,b,_2) => b};
     `;
@@ -287,8 +291,9 @@ if (value.length === 0) value = FAIL;`);
                   ['act',['prim',['or','"?"','"*"','"+"']], 6],
                   'prim']],
    ['def','prim',['or',['act',['"super"','"."','IDENT'], 7],
+                  ['act',['"this"','"."','HOLE'], 8],
                   'IDENT','STRING',
-                  ['act',['"("','body','")"'], 8]]]];
+                  ['act',['"("','body','")"'], 9]]]];
 
   const bnfActions = doBnf((_, ...actions) => actions);
 

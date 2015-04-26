@@ -59,7 +59,7 @@ ${JSON.stringify(this.template, void 0, ' ')}
       const found = this.find(pos);
       if (Array.isArray(found)) {
         const specimen = this.template[found[0]].slice(found[1]);
-        if (typeof pass === 'string') {
+        if (typeof patt === 'string') {
           if (specimen.startsWith(patt)) {
             return [pos + patt.length, patt];
           }
@@ -87,8 +87,27 @@ ${JSON.stringify(this.template, void 0, ' ')}
 
   const scannerless = quasifyParser(Scannerless);
 
+  function match(RE) {
+    // Not an arrow function because its "this" is significant
+    return function(pos) {
+      const found = this.find(pos);
+      if (Array.isArray(found)) {
+        const specimen = this.template[found[0]].slice(found[1]);
+        const arr = RE.exec(specimen);
+        if (arr) {
+          let value = arr.length === 0 ? arr[0] : 
+                arr.length === 1 ? arr[1] :
+                arr.slice(1);
+          return [pos + arr.index + arr[0].length, value];
+        }
+      }
+      return [pos, FAIL];
+    };
+  }
+
   return def({
     Scannerless,
-    scannerless
+    scannerless,
+    match
   });
 }());

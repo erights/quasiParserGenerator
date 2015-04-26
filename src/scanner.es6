@@ -61,8 +61,8 @@ module.exports = (function(){
         const arr = RE.exec(segment);
         if (arr === null) {
           const badTok =
-                new Token(segment.slice(RE.lastIndex),
-                          new Pos(segmentNum, RE.lastIndex, segment.length));
+              new Token(segment.slice(RE.lastIndex),
+                        new Pos(segmentNum, RE.lastIndex, segment.length));
           throw new SyntaxError(`Unexpected: ${badTok}`);
         }
         const text = arr[1];
@@ -194,7 +194,6 @@ ${JSON.stringify(this.template, void 0, ' ')}
       return [pos, pos >= this.toks.length ? EOF : FAIL];
     }
   }
-
 
   return def({
     FAIL, EOF,

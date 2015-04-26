@@ -100,13 +100,13 @@ module.exports = (function(){
 
   const scannerish = bnf.extends(scannerless)`
     start ::= token* EOF     ${toks => (..._) => toks};
-    token ::= CHAR | HOLE;
+    token ::= "he" | CHAR | HOLE;
+    _DIGIT ::= CHAR ${c => (..._) => /\d/.test(c)};
   `;
 
   const tks = scannerish`hello${3}world`;
 
   console.log(tks);
-  
+
   return def({});
 }());
-  
