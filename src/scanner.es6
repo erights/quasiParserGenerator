@@ -83,7 +83,7 @@ module.exports = (function(){
     }
     toString() { return `${JSON.stringify(this.text)} at ${this.pos}`; }
 
-    static tokensInSegment(segmentNum, segment, RE, skipRE) {
+    static tokensInSegment(segmentNum, segment, RE) {
       RE = stickyRE(RE);
       let expectedIndex = 0;
       RE.lastIndex = 0;
@@ -104,7 +104,7 @@ module.exports = (function(){
         if (expectedIndex !== actualStart) {
           throw new Error(`Internal: ${tok} expected at ${expectedIndex}`);
         }
-        if (!allRE(skipRE).test(text)) { result.push(tok); }
+        result.push(tok);
         expectedIndex = RE.lastIndex;
       }
       return def(result);
@@ -113,12 +113,11 @@ module.exports = (function(){
     // Interleaved token records extracted from the segments of the
     // template, and bare hole numbers representing the gap between
     // templates.
-    static tokensInTemplate(template, RE, skipRE) {
+    static tokensInTemplate(template, RE) {
       const numSubs = template.length - 1;
       const result = [];
       for (let segnum = 0; segnum <= numSubs; segnum++) {
-        result.push(...this.tokensInSegment(segnum, template[segnum],
-                                            RE, skipRE));
+        result.push(...this.tokensInSegment(segnum, template[segnum], RE));
         if (segnum < numSubs) {
           result.push(segnum); // bare hole number
         }
@@ -144,7 +143,7 @@ module.exports = (function(){
   ));
 
   // Whitespace tokens to skip in cheap ad hoc DSLs
-  const WHITESPACE_RE = anyRE(SPACE_RE, LINE_COMMENT_RE);
+  const SKIP_ALLRE = allRE(anyRE(SPACE_RE, LINE_COMMENT_RE));
 
 
   /**
@@ -172,10 +171,7 @@ module.exports = (function(){
       def(this.otherTokenTypes);  // TODO: should also freeze set contents
 
       // TODO: derive TOKEN_RE from otherTokenTypes
-      this.toks = Token.tokensInTemplate(
-          template.raw,
-          TOKEN_RE,
-          WHITESPACE_RE);
+      this.toks = Token.tokensInTemplate(template.raw, TOKEN_RE);
       def(this);
     }
     start() {
@@ -192,7 +188,19 @@ ${JSON.stringify(this.template, void 0, ' ')}
       throw new SyntaxError(`from ${firstTok} to ${lastTok}`);
     }
 
+    // Must always succeed
+    rule_SKIP(pos) {
+      while (pos < this.toks.length) {
+        const token = this.toks[pos];
+        if (typeof token === 'number') { break; }
+        if (!SKIP_ALLRE.test(token.text)) { break; }
+        pos++;
+      }
+      return [pos, ''];
+    }
+
     eat(pos, patt) {
+      [pos] = this.rule_SKIP(pos);
       if (pos >= this.toks.length) { return [pos, FAIL]; }
       const token = this.toks[pos];
       if (typeof token === 'number') { return [pos, FAIL]; }
@@ -205,6 +213,7 @@ ${JSON.stringify(this.template, void 0, ' ')}
     rule_NUMBER(pos) { return this.eat(pos, NUMBER_RE); }
     rule_STRING(pos) { return this.eat(pos, STRING_RE); }
     rule_IDENT(pos) {
+      [pos] = this.rule_SKIP(pos);
       if (pos >= this.toks.length) { return [pos, FAIL]; }
       const token = this.toks[pos];
       if (typeof token === 'number') { return [pos, FAIL]; }
@@ -215,6 +224,7 @@ ${JSON.stringify(this.template, void 0, ' ')}
       return [pos, FAIL];
     }
     rule_HOLE(pos) {
+      [pos] = this.rule_SKIP(pos);
       if (pos >= this.toks.length) { return [pos, FAIL]; }
       const token = this.toks[pos];
       if (typeof token === 'number') {
@@ -223,6 +233,7 @@ ${JSON.stringify(this.template, void 0, ' ')}
       return [pos, FAIL];
     }
     rule_EOF(pos) {
+      [pos] = this.rule_SKIP(pos);
       return [pos, pos >= this.toks.length ? EOF : FAIL];
     }
   }
