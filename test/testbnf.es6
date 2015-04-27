@@ -104,7 +104,7 @@ module.exports = (function(){
     token ::= "he" | CHAR | HOLE;
   `;
 
-  const tks = scannerish`hello${3}world`;
+  const tks = scannerish` hello${3}world`;
 
   console.log(tks);
 
