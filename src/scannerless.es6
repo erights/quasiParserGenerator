@@ -3,20 +3,22 @@ module.exports = (function(){
   "use strict";
 
   const {def} = require('./sesshim.es6');
-  const {FAIL, EOF, Pos} = require('./scanner.es6');
-  const {quasifyParser} = require('./bootbnf.es6');
+  const {FAIL, EOF,
+    SPACE_RE, NUMBER_RE, STRING_RE, IDENT_RE,
+    LINE_COMMENT_RE, stickyRE, Pos} = require('./scanner.es6');
+  const {quasifyParser, bnf} = require('./bootbnf.es6');
 
 
   /**
    * The base Parser class for parser traits to extend in order to
-   * define Scannerless parsers. This class functions as a degenerate
+   * define scannerless parsers. This class functions as a degenerate
    * Lexer whose "tokens", so to speak, are either<ul>
    * <li>a character,
    * <li>a hole number,
    * <li>EOF
    * </ul>
    */
-  class Scannerless {
+  class BaseScannerless {
     constructor(template) {
       this.template = template;
     }
@@ -58,9 +60,9 @@ ${JSON.stringify(this.template, void 0, ' ')}
     eat(pos, patt) {
       const found = this.find(pos);
       if (Array.isArray(found)) {
-        const specimen = this.template[found[0]].slice(found[1]);
+        const segment = this.template[found[0]];
         if (typeof patt === 'string') {
-          if (specimen.startsWith(patt)) {
+          if (segment.startsWith(patt, found[1])) {
             return [pos + patt.length, patt];
           }
         }
@@ -85,15 +87,17 @@ ${JSON.stringify(this.template, void 0, ' ')}
     }
   }
 
-  const scannerless = quasifyParser(Scannerless);
+  const baseScannerless = quasifyParser(BaseScannerless);
 
   function match(RE) {
+    RE = stickyRE(RE);
     // Not an arrow function because its "this" is significant
     return function(pos) {
       const found = this.find(pos);
       if (Array.isArray(found)) {
-        const specimen = this.template[found[0]].slice(found[1]);
-        const arr = RE.exec(specimen);
+        const segment = this.template[found[0]];
+        RE.lastIndex = found[1];
+        const arr = RE.exec(segment);
         if (arr) {
           let value = arr.length === 0 ? arr[0] : 
                 arr.length === 1 ? arr[1] :
@@ -105,9 +109,24 @@ ${JSON.stringify(this.template, void 0, ' ')}
     };
   }
 
+  const scannerless = bnf.extends(baseScannerless)`
+    start ::= TOKEN* EOF                       ${(toks,_) => toks};
+    TOKEN ::= NUMBER | STRING | IDENT | CHAR | HOLE;
+    SPACE ::= this.${match(SPACE_RE)};
+    # COMMENT is broken out to make it easy to override
+    COMMENT ::= this.${match(LINE_COMMENT_RE)};
+    WHITE ::= (SPACE | COMMENT)*;
+    NUMBER ::= WHITE this.${match(NUMBER_RE)}  ${(_,v) => v};
+    STRING ::= WHITE this.${match(STRING_RE)}  ${(_,v) => v};
+    IDENT ::= WHITE this.${match(IDENT_RE)}    ${(_,v) => v};
+    CHAR ::= WHITE super.CHAR                  ${(_,v) => v};
+    EOF ::= WHITE super.EOF                    ${(_,v) => v};
+`;
+
   return def({
-    Scannerless,
-    scannerless,
-    match
+    BaseScannerless,
+    baseScannerless,
+    match,
+    scannerless
   });
 }());

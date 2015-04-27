@@ -30,6 +30,37 @@ module.exports = (function(){
     return RegExp('(' + RE.source + ')', RE.flags);
   }
 
+  // Like RE but as if the sticky ('y') flag is on.
+  // RE itself should have neither the 'y' nor 'g' flag set,
+  // and it should not being with a "^" (start anchor).
+  function stickyRE(RE) {
+    return RegExp(RE.source, RE.flags + 'y');
+  }
+
+  try {
+    stickyRE(/x/);
+  } catch (er) {
+    if (!(er instanceof SyntaxError)) { throw er; }
+    // Assume that this platform doesn't support the 'y' flag so we
+    // must emulate it
+    const superExec = RegExp.prototype.exec;
+    stickyRE = function stickyREShim(RE) {
+      var result = RegExp(RE.source, RE.flags + 'g');
+      result.exec = function stickyExec(str) {
+        const start = this.lastIndex;
+        const arr = superExec.call(this, str);
+        if (!arr) { return arr; }
+        if (arr.index !== start) {
+          this.lastIndex = 0;
+          return null;
+        }
+        return arr;
+      };
+      return result;
+    };
+  }
+
+
   // A position of a token in a template of a template string.
   // Ideally, somewhere else there's a sourcemap from the source positions
   // of the template string expression itself to the template itself, though
@@ -53,6 +84,7 @@ module.exports = (function(){
     toString() { return `${JSON.stringify(this.text)} at ${this.pos}`; }
 
     static tokensInSegment(segmentNum, segment, RE, skipRE) {
+      RE = stickyRE(RE);
       let expectedIndex = 0;
       RE.lastIndex = 0;
       const result = [];
@@ -142,7 +174,7 @@ module.exports = (function(){
       // TODO: derive TOKEN_RE from otherTokenTypes
       this.toks = Token.tokensInTemplate(
           template.raw,
-          new RegExp(TOKEN_RE.source, 'g'),  // Note: Not frozen
+          TOKEN_RE,
           WHITESPACE_RE);
       def(this);
     }
@@ -198,7 +230,8 @@ ${JSON.stringify(this.template, void 0, ' ')}
   return def({
     FAIL, EOF,
     SPACE_RE, NUMBER_RE, STRING_RE, IDENT_RE,
-    allRE, anyRE, captureRE,
-    Token, Scanner
+    LINE_COMMENT_RE, 
+    allRE, anyRE, captureRE, stickyRE,
+    Pos, Token, Scanner
   });
 }());
