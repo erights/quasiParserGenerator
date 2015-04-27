@@ -142,9 +142,6 @@ module.exports = (function(){
     LINE_COMMENT_RE
   ));
 
-  // Whitespace tokens to skip in cheap ad hoc DSLs
-  const SKIP_ALLRE = allRE(anyRE(SPACE_RE, LINE_COMMENT_RE));
-
 
   /**
    * The default base Parser class for parser traits to extend. This
@@ -188,25 +185,55 @@ ${JSON.stringify(this.template, void 0, ' ')}
       throw new SyntaxError(`from ${firstTok} to ${lastTok}`);
     }
 
+    skip(pos, RE) {
+      if (pos < this.toks.length) {
+        const token = this.toks[pos];
+        if (typeof token !== 'number') {
+          if (allRE(RE).test(token.text)) {
+            return [pos + 1, ''];
+          }
+        }
+      }
+      return [pos, FAIL];
+    }
+    rule_SPACE(pos) {
+      return this.skip(pos, SPACE_RE);
+    }
+    rule_COMMENT(pos) {
+      return this.skip(pos, LINE_COMMENT_RE);
+    }
+
     // Must always succeed
+    // (SPACE | COMMENT)*
     rule_SKIP(pos) {
       while (pos < this.toks.length) {
         const token = this.toks[pos];
         if (typeof token === 'number') { break; }
-        if (!SKIP_ALLRE.test(token.text)) { break; }
-        pos++;
+        let pair = this.rule_SPACE(pos);
+        if (pair[1] !== FAIL) {
+          pos = pair[0];
+        } else {
+          pair = this.rule_COMMENT(pos);
+          if (pair[1] !== FAIL) {
+            pos = pair[0];
+          } else {
+            break;
+          }
+        }
       }
       return [pos, ''];
     }
 
     eat(pos, patt) {
       [pos] = this.rule_SKIP(pos);
-      if (pos >= this.toks.length) { return [pos, FAIL]; }
-      const token = this.toks[pos];
-      if (typeof token === 'number') { return [pos, FAIL]; }
-      if ((typeof patt === 'string' && patt === token.text) ||
-          allRE(patt).test(token.text)) {
-        return [pos + 1, token.text];
+      if (pos < this.toks.length) {
+        const token = this.toks[pos];
+        if (typeof token !== 'number') {
+          if ((typeof patt === 'string' && patt === token.text) ||
+              allRE(patt).test(token.text)) {
+            return [pos + 1, token.text];
+          }
+        }
       }
       return [pos, FAIL];
     }
