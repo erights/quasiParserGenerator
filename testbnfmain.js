@@ -5,10 +5,10 @@
  */
 module.exports = (function(){
   "use strict";
-  
+
   require('babel');
   require('babel/register');
-  
+
   var sesshim = require('./src/sesshim.es6');
   var def = sesshim.def;
   require('./test/testbnf.es6');

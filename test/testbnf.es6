@@ -3,11 +3,11 @@ module.exports = (function(){
   "use strict";
 
   const {def} = require('../src/sesshim.es6');
-  const bootbnf = require('../src/bootbnf.es6');
-  const bnf = bootbnf.bnf;
+  const {bnf, metaCompile, doBnf, defaultBaseGrammar
+        } = require('../src/bootbnf.es6');
   const {scannerless} = require('../src/scannerless.es6');
 
-  
+
   function doArith(bnfParam) {
     return bnfParam`
       start ::= expr EOF  ${(v,_) => v};
@@ -20,20 +20,20 @@ module.exports = (function(){
       | "(" expr ")"      ${(_,v,_2) => v};
      `;
   }
-  
+
   const arith = doArith(bnf);
-  
+
   function testArith(arith) {
     if (arith`1 + (-2 + ${3*11} + ${55-11}) + 4` !== 80) {
       throw Error('arith template handler did not work');
     }
   };
-  
+
   testArith(arith);
-  
-  
+
+
   //---------------
-  
+
   const arithRules = [
    ['def','start',['act',['expr','EOF'],0]],
    ['def','expr',['or',['act',['term','"+"','expr'],1],
@@ -41,72 +41,84 @@ module.exports = (function(){
    ['def','term',['or',['act',['NUMBER'],2],
                   ['act',['HOLE'],3],
                   ['act',['"("','expr','")"'],4]]]];
-  
-  
+
+
   const arithActions = doArith((_, ...actions) => actions);
-  
-  
-  
-  const arith0 = bootbnf.metaCompile(arithRules)(...arithActions);
-  
+
+
+
+  const arith0 = metaCompile(arithRules)(...arithActions);
+
   testArith(arith0);
-  
-  testArith(doArith(bootbnf.doBnf(bnf)));
-  
-  
-  
+
+  testArith(doArith(doBnf(bnf)));
+
+
+  //---------------
+
   const QuasiJSON = bnf`
-    start ::= value EOF     ${(v,_) => v};
+    start ::= value EOF    ${(v,_) => v};
     value ::=
-      prim                  ${p => (..._) => JSON.parse(p)}
-    | array 
+      prim                 ${p => (..._) => JSON.parse(p)}
+    | array
     | record                # json.org calls this "object"
-    | HOLE                  ${h => (...subs) => subs[h]};
+    | HOLE                 ${h => (...subs) => subs[h]};
     prim ::= STRING | NUMBER | "true" | "false" | "null";
-  
+
     array ::= "[" value ** "," "]"
-                            ${(_,vs,_2) => (...subs) => vs.map(v => v(...subs))};
+                           ${(_,vs,_2) => (...subs) => vs.map(v => v(...subs))};
     record ::= "{" (key ":" value) ** "," "}"
-                            ${(_,pairs,_2) => (...subs) => {
-                                const result = {};
-                                for (let [k,_,v] of pairs) { 
-                                  result[k(...subs)] = v(...subs);
-                                }
-                                return result;
-                            }};
-    key ::= 
-      STRING                ${p => (..._) => JSON.parse(p)}
-    | HOLE                  ${h => (...subs) => subs[h]};
+                           ${(_,pairs,_2) => (...subs) => {
+                               const result = {};
+                               for (let [k,_,v] of pairs) {
+                                 result[k(...subs)] = v(...subs);
+                               }
+                               return result;
+                           }};
+    key ::=
+      STRING               ${p => (..._) => JSON.parse(p)}
+    | HOLE                 ${h => (...subs) => subs[h]};
   `;
-  
-  
+
+
   const piece = QuasiJSON`{${"foo"}: [${33}, 44]}`;
-  
+
   console.log(piece);
-  
-  
+
+
   const JSONPlus = bnf.extends(QuasiJSON)`
     start ::= super.start;
     key ::=
       super.key
-    | IDENT                 ${id => (..._) => id};
+    | IDENT                ${id => (..._) => id};
   `;
-  
-  
+
+
   const thing = JSONPlus`{"bar": ${piece}, baz: [55]}`;
-  
+
   console.log(thing);
 
 
   const scannerish = bnf.extends(scannerless)`
     start ::= token* EOF     ${toks => (..._) => toks};
     token ::= "he" | CHAR | HOLE;
-    _DIGIT ::= CHAR ${c => (..._) => /\d/.test(c)};
   `;
 
   const tks = scannerish`hello${3}world`;
 
   console.log(tks);
+
+
+  //---------------
+
+  const scannerlessBnf = bnf.extends(scannerless);
+
+  const scannerlessArith = doArith(scannerlessBnf);
+
+//  testArith(scannerlessArith);
+
+
+  //---------------
 
   return def({});
 }());

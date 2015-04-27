@@ -99,7 +99,7 @@ ${JSON.stringify(this.template, void 0, ' ')}
         RE.lastIndex = found[1];
         const arr = RE.exec(segment);
         if (arr) {
-          let value = arr.length === 0 ? arr[0] : 
+          let value = arr.length === 0 ? arr[0] :
                 arr.length === 1 ? arr[1] :
                 arr.slice(1);
           return [pos + arr.index + arr[0].length, value];

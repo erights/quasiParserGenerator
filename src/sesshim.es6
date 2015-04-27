@@ -14,7 +14,7 @@
  * sesshim.es6 will ignore that and do the same thing. Once actual SES
  * works on node/iojs/ES6, sesshim.js should test if it is in such an
  * environment, and re-export SES's versions of the APIs that
- * sesshim.es6 does provide, or wrappings that adapt them to ES6. 
+ * sesshim.es6 does provide, or wrappings that adapt them to ES6.
  */
 module.exports = (function(){
   "use strict";

@@ -250,7 +250,7 @@ if (value.length === 0) value = FAIL;`);
       const quasiParser = _asExtending(defaultBaseGrammar);
       quasiParser._asExtending = _asExtending;
       function _extends(baseQuasiParser) {
-        return (template, ...subs) => 
+        return (template, ...subs) =>
           quasiParser(template, ...subs)._asExtending(baseQuasiParser);
       }
       quasiParser.extends = _extends;
@@ -300,7 +300,7 @@ if (value.length === 0) value = FAIL;`);
   const bnf = metaCompile(bnfRules)(...bnfActions);
 
   return def({
-    bnf, 
+    bnf,
     doBnf,
     metaCompile,
     quasifyParser,

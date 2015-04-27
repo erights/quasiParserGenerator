@@ -230,7 +230,7 @@ ${JSON.stringify(this.template, void 0, ' ')}
   return def({
     FAIL, EOF,
     SPACE_RE, NUMBER_RE, STRING_RE, IDENT_RE,
-    LINE_COMMENT_RE, 
+    LINE_COMMENT_RE,
     allRE, anyRE, captureRE, stickyRE,
     Pos, Token, Scanner
   });
