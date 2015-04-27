@@ -184,6 +184,7 @@ if (value.length === 0) value = FAIL;`);
           return `[pos, value] = super.rule_${ident}(pos);`;
         },
         apply(hole) {
+          numSubs = Math.max(numSubs, hole + 1);
           return `[pos, value] = act_${hole}.call(this, pos);`;
         }
       });

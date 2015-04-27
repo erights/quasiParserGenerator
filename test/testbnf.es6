@@ -101,21 +101,19 @@ module.exports = (function(){
 
   const scannerish = bnf.extends(scannerless)`
     start ::= token* EOF     ${toks => (..._) => toks};
-    token ::= "he" | CHAR | HOLE;
+    token ::= "he" | "++" | NUMBER | CHAR | HOLE;
   `;
 
-  const tks = scannerish` hello${3}world`;
+  const tks = scannerish`33he llo${3}w ++ orld`;
 
   console.log(tks);
 
 
   //---------------
 
-  const scannerlessBnf = bnf.extends(scannerless);
+  const scannerlessArith = doArith(bnf.extends(scannerless));
 
-  const scannerlessArith = doArith(scannerlessBnf);
-
-//  testArith(scannerlessArith);
+  testArith(scannerlessArith);
 
 
   //---------------
