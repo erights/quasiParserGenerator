@@ -27,7 +27,7 @@ arith`1 + (2 + ${3*11} + ${55-11}) + 4`;
 
 ```
 
-By expressing the bnf grammar itself as a template string, we avoid an awkwardness nearly universal among parser generator input languages: the mixing of the language-independent bnf notation and the target-language-specific action rules. By contrast, our ```bnf``` template string tag only needs to parse bnf in the literal part of its template. The actions associated with each rule are provided using  ```${...}```substitution holes in the host language, as functions to be invoked during parsing of the template.
+By expressing the bnf grammar itself as a template string, we avoid an awkwardness nearly universal among parser generator input languages: the mixing of the language-independent bnf notation and the host-language-specific action rules. By contrast, our ```bnf``` template string tag only needs to parse bnf in the literal part of its template. The actions associated with each rule are provided using  ```${...}```substitution holes in the host language, as functions to be invoked during parsing of the template.
 
 Each action rule takes as input the value associated with each of its input productions, and returns the value to be associated with its own production. The first bnf production is the start rule, and its value must be an n-ary function of the substitution values as arguments. The value returned by that function is the value of the template string expression as a whole.
 

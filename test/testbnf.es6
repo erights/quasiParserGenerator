@@ -3,8 +3,7 @@ module.exports = (function(){
   "use strict";
 
   const {def} = require('../src/sesshim.es6');
-  const {bnf, metaCompile, doBnf, defaultBaseGrammar
-        } = require('../src/bootbnf.es6');
+  const {bnf, metaCompile, doBnf} = require('../src/bootbnf.es6');
   const {scannerless} = require('../src/scannerless.es6');
 
 
