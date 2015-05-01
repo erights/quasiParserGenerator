@@ -152,6 +152,7 @@ module.exports = (function(){
   class Packratter {
     constructor() {
       this.memo = new Map();
+      this.debug = false;
       // This won't work when moving to SES because the "def(this)" in
       // the constructor will freeze _counts as it should. After
       // all, this is mutable state our clients can corrupt.
@@ -174,7 +175,7 @@ module.exports = (function(){
       return result;
     }
     done() {
-      if (this._counts.hits >= 300) {
+      if (this.debug) {
         console.log('\n');
         for (let [pos, posm] of this.memo) {
           var fails = [];
