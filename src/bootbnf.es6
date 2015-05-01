@@ -72,7 +72,7 @@ module.exports = (function(){
       // a pair of the final position (after the last non-EOF token
       // parsed), and the semantic value. On failure to parse, the
       // semantic value will be FAIL.
-      const pair = this.rule_${rules[0][1]}(0);
+      const pair = this.run(this.rule_${rules[0][1]}, 0);
       if (pair[1] == FAIL) {
         this.syntaxError(0, pair[0]);
       }
@@ -181,7 +181,7 @@ if (value.length === 0) value = FAIL;`);
           return vtable['++'](patt, ['empty']);
         },
         'super'(ident) {
-          return `[pos, value] = super.rule_${ident}(pos);`;
+          return `[pos, value] = this.run(super.rule_${ident}, pos);`;
         },
         apply(hole) {
           numSubs = Math.max(numSubs, hole + 1);
@@ -196,7 +196,7 @@ if (value.length === 0) value = FAIL;`);
         }
         if (sc.allRE(sc.IDENT_RE).test(sexp)) {
           // Assume a standalone identifier is a rule name.
-          return `[pos, value] = this.rule_${sexp}(pos);`;
+          return `[pos, value] = this.run(this.rule_${sexp}, pos);`;
         }
         throw new Error('unexpected: ' + sexp);
       }
@@ -225,7 +225,9 @@ if (value.length === 0) value = FAIL;`);
   function quasifyParser(Parser) {
     function baseCurry(template) {
       const parser = new Parser(template);
-      return parser.start();
+      const pair = parser.start();
+      parser.done();  // hook for logging debug output
+      return pair;
     }
     const quasiParser = quasiMemo(baseCurry);
     quasiParser.Parser = Parser;

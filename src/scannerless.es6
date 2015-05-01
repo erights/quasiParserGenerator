@@ -5,7 +5,8 @@ module.exports = (function(){
   const {def} = require('./sesshim.es6');
   const {FAIL, EOF,
     SPACE_RE, NUMBER_RE, STRING_RE, IDENT_RE,
-    LINE_COMMENT_RE, stickyRE, Pos} = require('./scanner.es6');
+    LINE_COMMENT_RE, stickyRE, 
+    Pos, Packratter} = require('./scanner.es6');
   const {quasifyParser, bnf} = require('./bootbnf.es6');
 
   /**
@@ -17,8 +18,9 @@ module.exports = (function(){
    * <li>EOF
    * </ul>
    */
-  class BaseScannerless {
+  class BaseScannerless extends Packratter {
     constructor(template) {
+      super();
       this.template = template;
     }
     start() {
@@ -57,6 +59,8 @@ ${JSON.stringify(this.template, void 0, ' ')}
       throw new SyntaxError(`from ${st} upto ${af}`);
     }
     // Meant to be overridden, but must always succeed
+    // Callers should not memoize calls to rule_SKIP as it is likely
+    // not worth it. 
     rule_SKIP(pos) {
       return [pos, ''];
     }

@@ -144,6 +144,57 @@ module.exports = (function(){
 
 
   /**
+   * To call the packrat-memoized form of a rule N, call
+   * this.run(this.rule_N, pos) rather than
+   * this.rule_N(pos). Likewise, call this.run(super.rule_N, pos)
+   * rather than super.rule_N(pos).
+   */
+  class Packratter {
+    constructor() {
+      this.memo = new Map();
+      // This won't work when moving to SES because the "def(this)" in
+      // the constructor will freeze _counts as it should. After
+      // all, this is mutable state our clients can corrupt.
+      this._counts = {hits: 0, misses: 0};
+    }
+    run(rule, pos) {
+      let posm = this.memo.get(pos);
+      if (!posm) {
+        posm = new Map()
+        this.memo.set(pos, posm);
+      }
+      let result = posm.get(rule);
+      if (result) {
+        this._counts.hits++;
+      } else {
+        this._counts.misses++;
+        result = rule.call(this, pos);
+        posm.set(rule, result);
+      }
+      return result;
+    }
+    done() {
+      if (this._counts.hits >= 300) {
+        console.log('\n');
+        for (let [pos, posm] of this.memo) {
+          var fails = [];
+          for (let [rule, [newPos, v]] of posm) {
+            if (v === FAIL) {
+              fails.push(rule.name);
+            } else {
+              console.log(`${rule.name}(${pos}) => [${newPos}, ${v}]`);
+            }
+          }
+          console.log(`@${pos} => FAIL [${fails}]`);
+        }
+        console.log(`hits: ${this._counts.hits
+                            }, misses: ${this._counts.misses}`);
+      }
+    }
+  }
+
+
+  /**
    * The default base Parser class for parser traits to extend. This
    * provides a simple conventional lexer, where the production rules
    * correspond to conventional token types. Parsers defined using the
@@ -152,8 +203,9 @@ module.exports = (function(){
    * from Scanner in order to define a derived lexer, you probably
    * need to use EcmaScript class inheritance directly.
    */
-  class Scanner {
+  class Scanner extends Packratter {
     constructor(template, tokenTypeList=[]) {
+      super();
       this.template = template;
       this.keywords = new Set();
       this.otherTokenTypes = new Set();
@@ -204,7 +256,11 @@ ${JSON.stringify(this.template, void 0, ' ')}
     }
 
     // Must always succeed
-    // (SPACE | COMMENT)*
+    //   (SPACE | COMMENT)*
+    // Callers should not memoize calls to rule_SKIP as it is likely
+    // not worth it. rule_SKIP does not memoize its call to rule_SPACE
+    // for the same reason. However, it does memoize its call to
+    // rule_COMMENT.
     rule_SKIP(pos) {
       while (pos < this.toks.length) {
         const token = this.toks[pos];
@@ -213,7 +269,7 @@ ${JSON.stringify(this.template, void 0, ' ')}
         if (pair[1] !== FAIL) {
           pos = pair[0];
         } else {
-          pair = this.rule_COMMENT(pos);
+          pair = this.run(this.rule_COMMENT, pos);
           if (pair[1] !== FAIL) {
             pos = pair[0];
           } else {
@@ -270,6 +326,6 @@ ${JSON.stringify(this.template, void 0, ' ')}
     SPACE_RE, NUMBER_RE, STRING_RE, IDENT_RE,
     LINE_COMMENT_RE,
     allRE, anyRE, captureRE, stickyRE,
-    Pos, Token, Scanner
+    Pos, Token, Packratter, Scanner
   });
 }());
