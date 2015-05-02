@@ -128,7 +128,7 @@ ${JSON.stringify(this.template, void 0, ' ')}
     };
   }
 
-  // Has the same token-level API as scanner
+  // Has the same token-level API as defaulBaseGrammar
   const scannerless = bnf.extends(baseScannerless)`
     start ::= TOKEN* EOF                       ${(toks,_) => toks};
     SKIP ::= (SPACE | COMMENT)*;

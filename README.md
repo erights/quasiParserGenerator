@@ -1,6 +1,6 @@
-We present a proof of concept template string tag for generating template string tags. See below for why this is only a proof of concept. There are many good serious parser generator frameworks out there, all of which are easily superior to the toy parser generator at the heart of this tag. The point of this project is not to provide an alternative to any of these, but rather to demonstrate how any of these technologies could be adapted to provide a template string tag for generating template string tags that could and should replace this project.
+We present a template string tag for generating template string tags. The template string tag for generating template string tags presented here is already adequate for creating lots of useful little DSLs. However, see the list of qualifications at the end.
 
-Nevertheless, until it is replaced, the template string tag for generating template string tags presented here is adequate for creating lots of useful little DSLs.
+This project owes a huge debt to OMeta, which I repeatedly turned to as questions arose. However, this project is much less ambitious in a number of ways.
 
 # A Template String Tag Generator
 
@@ -53,6 +53,7 @@ The grammar for our bnf language, extracted from src/bootbnf.es6, expressed in i
       | prim;
       prim ::=
         "super" "." IDENT            ${(sup,_2,id) => [sup, id]}
+      | "this" "." HOLE              ${(_,_2,hole) => ['apply', hole]
       | IDENT | STRING
       | "(" body ")"                 ${(_,b,_2) => b};
     `
@@ -70,7 +71,7 @@ Quoted identifiers are keywords, and are therefore not recognized by the ```IDEN
 
 In addition to the rules it defines, our bnf grammar's own self description uses the identifiers ```EOF``` ,```IDENT```,  ```HOLE```, and ```STRING```. However, the only keyword it defines in ```"super"``` which it does not use. The reason is that this grammar inherits from ```bootbnf.defaultBaseGrammar```. The ```defaultBaseGrammar``` provides the rules for ```EOF``` ,```IDENT```,  ```HOLE```, and ```STRING```, as well as the expected rule for ```NUMBER```. The tags defined by the ```bnf``` tag also inherit from ```bootbnf.defaultBaseGrammar``` by default.
 
-Each grammar tag also has an ```extends``` method for specifying a base grammar explicitly. For example, test/testbnf.es6 defines a bnf grammar for JSON called ```QuasiJSON```. The relevant parts are
+The ```bnf``` tag also has an ```extends``` method for specifying a base grammar explicitly. For example, test/testbnf.es6 defines a bnf grammar for JSON called ```QuasiJSON```. The relevant parts are
 
 ```javascript
 const QuasiJSON = bnf`
@@ -100,14 +101,17 @@ The ```bnf.extends(QuasiJSON)``` expression produces a template string tag, like
 
 Grammar inheritance is implemented by ES6 (aka EcmaScript 2015) class inheritance. Each grammar defined by these mechanisms has a ```Parser``` property whose value is the actual class for that tag's parser. For example, ```bnf.Parser``` is a parser class that inherits from the ```defaultBaseGrammar.Parser``` class and does the actual parsing work of our ```bnf``` tag.
 
-# Why is this only a proof of concept?
+# What is Missing?
 
-The grammar is essentially a PEG (Parsing Expression Grammar), where "```|```" is a prioritied choice operator and backtracking happens only within a rule. Although it is set up to support the memoization of a Packrat parser, it does not yet do this memoization, and so potentially has exponential parse times.
+Our grammar is essentially a PEG (Parsing Expression Grammar), where "```|```" is a prioritied choice operator and backtracking happens only within a rule. Our parsers do packrat memoization, which should result in linear parse times.
 
-No support for left recursion.
+  * No support for left recursion.
+  * No support for parameterized rules.
+  * No support for positive or negative lookahead.
+  * No support for exclusive choice.
+  * Errors within the input to ```bnf``` are hard to debug.
+  * Errors within the input to the generated tag (e.g., ```arith```) are hard to debug.
 
-Errors within the input to ```bnf``` are hard to debug.
-
-Errors within the input to the generated tag (e.g., ```arith```) are hard to debug.
+All these issues might improve with time, especially by studying and borrowing mechanism from OMeta. In particular, having the full memo table available should enable us to report better errors.
 
 One issue with reporting good errors is unfixable, except by improving the template string mechanism in a future EcmaScript standard: The template string itself doesn't yet carry any source position information. If it did (e.g., ```template.sourceMap```), then template string tags could report errors in their input in terms of original source position. This would necessarily also expose code to its own source position, which is probably good.
