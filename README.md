@@ -14,11 +14,11 @@ var arith = bnf`
     start ::= expr EOF  ${(v,_) => v};
     expr ::=
       term "+" expr     ${(a,_,b) => (...subs) => a(...subs) + b(...subs)}
-    | term;
+    / term;
     term ::=
       NUMBER            ${n => (..._) => JSON.parse(n)}
-    | HOLE              ${h => (...subs) => subs[h]}
-    | "(" expr ")"      ${(_,v,_2) => v};
+    / HOLE              ${h => (...subs) => subs[h]}
+    / "(" expr ")"      ${(_,v,_2) => v};
    `;
 }
 
@@ -42,20 +42,20 @@ The grammar for our bnf language, extracted from src/bootbnf.es6, expressed in i
 ```javascript
   bnf`start ::= rule+ EOF            ${metaCompile};
       rule ::= IDENT "::=" body ";"  ${(name,_,body,_2) => ['def', name, body]};
-      body ::= choice ** "|"         ${list => simple('or', list)};
+      body ::= choice ** "/"         ${list => simple('or', list)};
       choice ::=
         seq HOLE                     ${(list,hole) => ['act', list, hole]}
-      | seq                          ${list => simple('seq', list)};
+      / seq                          ${list => simple('seq', list)};
       seq ::= term*;
       term ::=
-        prim ("**" | "++") prim      ${(patt,q,sep) => [q, patt, sep]}
-      | prim ("?" | "*" | "+")       ${(patt,q) => [q, patt]}
-      | prim;
+        prim ("**" / "++") prim      ${(patt,q,sep) => [q, patt, sep]}
+      / prim ("?" / "*" / "+")       ${(patt,q) => [q, patt]}
+      / prim;
       prim ::=
         "super" "." IDENT            ${(sup,_2,id) => [sup, id]}
-      | "this" "." HOLE              ${(_,_2,hole) => ['apply', hole]
-      | IDENT | STRING
-      | "(" body ")"                 ${(_,b,_2) => b};
+      / "this" "." HOLE              ${(_,_2,hole) => ['apply', hole]
+      / IDENT / STRING
+      / "(" body ")"                 ${(_,b,_2) => b};
     `
 ```
 
@@ -81,7 +81,7 @@ const QuasiJSON = bnf`
   ...
   key ::= 
     STRING                ${p => (..._) => JSON.parse(p)}
-  | HOLE                  ${h => (...subs) => subs[h]};
+  / HOLE                  ${h => (...subs) => subs[h]};
 `;
 
 ```
@@ -93,7 +93,7 @@ const JSONPlus = bnf.extends(QuasiJSON)`
   start ::= super.start;
   key ::=
     super.key
-  | IDENT                 ${id => (..._) => id};
+  / IDENT                 ${id => (..._) => id};
 `;
 ```
 
@@ -103,7 +103,7 @@ Grammar inheritance is implemented by ES6 (aka EcmaScript 2015) class inheritanc
 
 # What is Missing?
 
-Our grammar is essentially a PEG (Parsing Expression Grammar), where "```|```" is a prioritied choice operator and backtracking happens only within a rule. Our parsers do packrat memoization, which should result in linear parse times.
+Our grammar is essentially a PEG (Parsing Expression Grammar), where "```/```" is a prioritied choice operator and backtracking happens only within a rule. Our parsers do packrat memoization, which should result in linear parse times.
 
   * No support for left recursion.
   * No support for parameterized rules.

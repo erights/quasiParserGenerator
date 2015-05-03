@@ -3,6 +3,8 @@ module.exports = (function(){
   "use strict";
 
   const {def} = require('./sesshim.es6');
+  const sourceMap = require('source-map');
+
   const FAIL = def({toString: () => 'FAIL'});
   const EOF = def({toString: () => 'EOF'});
 
@@ -151,48 +153,60 @@ module.exports = (function(){
    */
   class Packratter {
     constructor() {
-      this.memo = new Map();
-      this.debug = false;
+      // _memo and _counts should all be private instance
+      // variables.
+      this._memo = new Map();
       // This won't work when moving to SES because the "def(this)" in
       // the constructor will freeze _counts as it should. After
       // all, this is mutable state our clients can corrupt.
       this._counts = {hits: 0, misses: 0};
     }
-    run(rule, pos) {
-      let posm = this.memo.get(pos);
+    run(ruleOrPatt, pos) {
+      let posm = this._memo.get(pos);
       if (!posm) {
         posm = new Map()
-        this.memo.set(pos, posm);
+        this._memo.set(pos, posm);
       }
-      let result = posm.get(rule);
+      let result = posm.get(ruleOrPatt);
       if (result) {
         this._counts.hits++;
       } else {
         this._counts.misses++;
-        result = rule.call(this, pos);
-        posm.set(rule, result);
+        if (typeof ruleOrPatt === 'function') {
+          result = ruleOrPatt.call(this, pos);
+        } else {
+          result = this.eat(pos, ruleOrPatt);
+        }
+        posm.set(ruleOrPatt, result);
       }
       return result;
     }
     done() {
-      if (this.debug) {
+      if (this.constructor._debug) {
         console.log('\n');
-        for (let [pos, posm] of this.memo) {
+        for (let [pos, posm] of this._memo) {
           var fails = [];
-          for (let [rule, [newPos, v]] of posm) {
+          for (let [ruleOrPatt, [newPos, v]] of posm) {
+          const name = typeof ruleOrPatt === 'function' ? 
+                           ruleOrPatt.name : JSON.stringify(ruleOrPatt);
             if (v === FAIL) {
-              fails.push(rule.name);
+              fails.push(name);
             } else {
-              console.log(`${rule.name}(${pos}) => [${newPos}, ${v}]`);
+              console.log(`${name}(${pos}) => [${newPos}, ${v}]`);
             }
           }
-          console.log(`@${pos} => FAIL [${fails}]`);
+          if (fails.length >= 1) {
+            console.log(`@${pos} => FAIL [${fails}]`);
+          }
         }
         console.log(`hits: ${this._counts.hits
                             }, misses: ${this._counts.misses}`);
       }
     }
   }
+
+  // _debug should be a private static variable
+  Packratter._debug = false;
 
 
   /**
@@ -257,7 +271,7 @@ ${JSON.stringify(this.template, void 0, ' ')}
     }
 
     // Must always succeed
-    //   (SPACE | COMMENT)*
+    //   (SPACE / COMMENT)*
     // Callers should not memoize calls to rule_SKIP as it is likely
     // not worth it. rule_SKIP does not memoize its call to rule_SPACE
     // for the same reason. However, it does memoize its call to

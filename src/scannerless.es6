@@ -131,12 +131,12 @@ ${JSON.stringify(this.template, void 0, ' ')}
   // Has the same token-level API as defaulBaseGrammar
   const scannerless = bnf.extends(baseScannerless)`
     start ::= TOKEN* EOF                       ${(toks,_) => toks};
-    SKIP ::= (SPACE | COMMENT)*;
+    SKIP ::= (SPACE / COMMENT)*;
     SPACE ::= this.${skip(SPACE_RE)};
     # COMMENT is broken out to make it easy to override
     COMMENT ::= this.${skip(LINE_COMMENT_RE)};
 
-    TOKEN ::= NUMBER | STRING | IDENT | CHAR | HOLE;
+    TOKEN ::= NUMBER / STRING / IDENT / CHAR / HOLE;
     NUMBER ::= this.${match(NUMBER_RE)};
     STRING ::= this.${match(STRING_RE)};
     IDENT ::= this.${match(IDENT_RE)};

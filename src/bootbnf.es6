@@ -192,7 +192,7 @@ if (value.length === 0) value = FAIL;`);
       if (typeof sexp === 'string') {
         if (sc.allRE(sc.STRING_RE).test(sexp)) {
           tokenTypes.add(sexp);
-          return `[pos, value] = this.eat(pos, ${sexp});`;
+          return `[pos, value] = this.run(${sexp}, pos);`;
         }
         if (sc.allRE(sc.IDENT_RE).test(sexp)) {
           // Assume a standalone identifier is a rule name.
@@ -225,8 +225,12 @@ if (value.length === 0) value = FAIL;`);
   function quasifyParser(Parser) {
     function baseCurry(template) {
       const parser = new Parser(template);
-      const pair = parser.start();
-      parser.done();  // hook for logging debug output
+      let pair = null;
+      try {
+        pair = parser.start();
+      } finally {
+        parser.done();  // hook for logging debug output
+      }
       return pair;
     }
     const quasiParser = quasiMemo(baseCurry);
@@ -266,27 +270,27 @@ if (value.length === 0) value = FAIL;`);
     return bnfParam`
       start ::= rule+ EOF            ${metaCompile};
       rule ::= IDENT "::=" body ";"  ${(name,_,body,_2) => ['def', name, body]};
-      body ::= choice ** "|"         ${list => simple('or', list)};
+      body ::= choice ** "/"         ${list => simple('or', list)};
       choice ::=
         seq HOLE                     ${(list,hole) => ['act', list, hole]}
-      | seq                          ${list => simple('seq', list)};
+      / seq                          ${list => simple('seq', list)};
       seq ::= term*;
       term ::=
-        prim ("**" | "++") prim      ${(patt,q,sep) => [q, patt, sep]}
-      | prim ("?" | "*" | "+")       ${(patt,q) => [q, patt]}
-      | prim;
+        prim ("**" / "++") prim      ${(patt,q,sep) => [q, patt, sep]}
+      / prim ("?" / "*" / "+")       ${(patt,q) => [q, patt]}
+      / prim;
       prim ::=
         "super" "." IDENT            ${(sup,_,id) => [sup, id]}
-      | "this" "." HOLE              ${(_,_2,hole) => ['apply', hole]}
-      | IDENT | STRING
-      | "(" body ")"                 ${(_,b,_2) => b};
+      / "this" "." HOLE              ${(_,_2,hole) => ['apply', hole]}
+      / IDENT / STRING
+      / "(" body ")"                 ${(_,b,_2) => b};
     `;
   }
 
   const bnfRules = [
    ['def','start',['act',[['+','rule'],'EOF'], 0]],
    ['def','rule',['act',['IDENT','"::="','body','";"'], 1]],
-   ['def','body',['act',[['**','choice','"|"']], 2]],
+   ['def','body',['act',[['**','choice','"/"']], 2]],
    ['def','choice',['or',['act',['seq','HOLE'], 3],
                     ['act',['seq'], 4]]],
    ['def','seq',['*','term']],
