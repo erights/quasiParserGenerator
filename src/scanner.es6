@@ -3,7 +3,7 @@ module.exports = (function(){
   "use strict";
 
   const {def} = require('./sesshim.es6');
-  const sourceMap = require('source-map');
+  const tsm = require('./templateSourceMap.es6');
 
   const FAIL = def({toString: () => 'FAIL'});
   const EOF = def({toString: () => 'EOF'});
