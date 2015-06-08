@@ -38,7 +38,7 @@ module.exports = (function() {
       (NUMBER / STRING / "null" / "true" / "false")        ${n => ['matchData',JSON.parse(n)]}
     / "[" param ** "," "]"                                 ${(_,ps,_2) => ['matchArray',ps]}
     / "{" propParam ** "," "}"                             ${(_,ps,_2) => ['matchObj',ps]}
-    / IDENT                                                ${id => ['bind',id]}
+    / IDENT
     / HOLE                                                 ${h => ['patternHole',h]};
 
     arg ::=
@@ -58,7 +58,7 @@ module.exports = (function() {
     / key ":" IDENT "=" expr                               ${(k,_,id,_2,e) => ['optionalProp',k,id,e]}
     / key ":" pattern                                      ${(k,_,p) => ['matchProp',k,p]}
     / IDENT "=" expr                                       ${(id,_,e) => ['optionalProp',id,id,e]}
-    / IDENT                                                ${id => ['matchProp',id,['bind',id]]};
+    / IDENT                                                ${id => ['matchProp',id,id]};
 
     key ::= IDENT / STRING;
 
