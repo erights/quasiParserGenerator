@@ -13,7 +13,7 @@ module.exports = (function() {
     start ::= body EOF                                     ${(b,_) => ['script', b]};
 
     primaryExpr ::=
-      (NUMBER / STRING / "null" / "true" / "false")        ${n => (..._) => ['data',JSON.parse(n)]}
+      (NUMBER / STRING / "null" / "true" / "false")        ${n => ['data',JSON.parse(n)]}
     / "[" arg ** "," "]"                                   ${(_,es,_2) => ['array',es]}
     / "{" prop ** "," "}"                                  ${(_,ps,_2) => ['object',ps]}
     / "(" expr ")"                                         ${(_,e,_2) => e}
