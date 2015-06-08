@@ -109,19 +109,25 @@ module.exports = (function() {
     / "try" block catcher finalizer                        ${(_,b,c,f) => ['try',b,c,f]}
     / "try" block finalizer                                ${(_,c,f) => ['try',b,f]}
     / "try" block catcher                                  ${(_,b,c,f) => ['try',b,c]}
-    / "switch" "(" expr ")" "{" (caseLabel+ block)* "}"    ${(_,_2,e,_3,_4,cs,_5) => ['switch',e,cs]}
-    / "return" NO_NEWLINE expr ";"                         ${(_,_2,e,_3) => ['return',e]}
-    / "return" ";"                                         ${(_,_2) => ['return']}
-    / "throw" expr ";"                                     ${(_,e,_2) => ['throw',e]}
+    / "switch" "(" expr ")" "{" branch* "}"                ${(_,_2,e,_3,_4,bs,_5) => ['switch',e,bs]}
+    / terminator
     / "debugger" ";"                                       ${(_,_2) => ['debugger']}
     / expr ";"                                             ${(e,_) => e}
     /                                                      ${() => ['empty']};
+
+    terminator ::=
+      "return" NO_NEWLINE expr ";"                         ${(_,_2,e,_3) => ['return',e]}
+    / "return" ";"                                         ${(_,_2) => ['return']}
+    / "break" ";"                                          ${_ => ['break']}
+    / "throw" expr ";"                                     ${(_,e,_2) => ['throw',e]};
 
     declaration ::= declOp (pattern "=" expr) ** "," ";"   ${(op,decls,_) => [op, decls]};
     declOp ::= "var" / "const" / "let";
 
     catcher ::= "catch" "(" pattern ")" block              ${(_,_2,p,_3,b) => ['catch',p,b]};
     finalizer ::= "finally" block                          ${(_,b) => ['finally',b]};
+
+    branch ::= caseLabel+ "{" body terminator "}"          ${(cs,_,b,t,_2) => ['branch',cs,b,t]};
     caseLabel ::=
       "case" expr ":"                                      ${(_,e) => ['case', e]}
     / "default" ":"                                        ${(_,_2) => ['default']};
