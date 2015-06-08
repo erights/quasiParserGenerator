@@ -9,7 +9,7 @@ module.exports = (function() {
   const qunpack = (h,ms,t) => {
     const result = [h];
     if (ms.length === 1) {
-      const [[m,...pairs]] = ms;
+      const [[m,pairs]] = ms;
       result.push(m);
       for ([e,q] of pairs) {
         result.push(e,q);
