@@ -22,7 +22,7 @@ module.exports = (function() {
     / HOLE                                                 ${h => ['exprHole',h]};
 
     pattern ::=
-      (NUMBER / STRING / "null" / "true" / "false")        ${n => (..._) => ['matchData',JSON.parse(n)]}
+      (NUMBER / STRING / "null" / "true" / "false")        ${n => ['matchData',JSON.parse(n)]}
     / "[" param ** "," "]"                                 ${(_,ps,_2) => ['matchArray',ps]}
     / "{" propParam ** "," "}"                             ${(_,ps,_2) => ['matchObj',ps]}
     / IDENT                                                ${id => ['bind',id]}
