@@ -10,7 +10,7 @@ module.exports = (function() {
   // Packratter._debug = true;
 
   const microses = bnf`
-    start ::= body EOF                                     ${(b,_) => b};
+    start ::= body EOF                                     ${(b,_) => ['script', b]};
 
     primaryExpr ::=
       (NUMBER / STRING / "null" / "true" / "false")        ${n => (..._) => ['data',JSON.parse(n)]}
@@ -45,7 +45,7 @@ module.exports = (function() {
     / key ":" IDENT "=" expr                               ${(k,_,id,_2,e) => ['optionalProp',k,id,e]}
     / key ":" pattern                                      ${(k,_,p) => ['matchProp',k,p]}
     / IDENT "=" expr                                       ${(id,_,e) => ['optionalProp',id,id,e]}
-    / IDENT                                                ${id => ['matchProp',id,id]};
+    / IDENT                                                ${id => ['matchProp',id,['bind',id]]};
 
     key ::= IDENT / STRING;
 
@@ -127,12 +127,12 @@ module.exports = (function() {
     catcher ::= "catch" "(" pattern ")" block              ${(_,_2,p,_3,b) => ['catch',p,b]};
     finalizer ::= "finally" block                          ${(_,b) => ['finally',b]};
 
-    branch ::= caseLabel+ "{" body terminator "}"          ${(cs,_,b,t,_2) => ['branch',cs,[...b,...t]]};
+    branch ::= caseLabel+ "{" body terminator "}"          ${(cs,_,b,t,_2) => ['branch',cs,[...b,t]]};
     caseLabel ::=
       "case" expr ":"                                      ${(_,e) => ['case', e]}
     / "default" ":"                                        ${(_,_2) => ['default']};
 
-    block ::= "{" body "}"                                 ${(_,b,_2) => b};
-    body ::= (statement / declaration)*                    ${ms => ['body', ms]};
+    block ::= "{" body "}"                                 ${(_,b,_2) => ['block', b]};
+    body ::= (statement / declaration)*;
   `;
 }());
