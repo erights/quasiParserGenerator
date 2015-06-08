@@ -38,11 +38,14 @@ module.exports = (function() {
 
     prop ::=
       "..." expr                                           ${(_,e) => ['spreadObj',e]}
-    / key ":" expr                                         ${(k,_,e) => ['prop',k,e]};
+    / key ":" expr                                         ${(k,_,e) => ['prop',k,e]}
+    / IDENT                                                ${id => ['prop',id,id]};
     propParam ::=
       "..." pattern                                        ${(_,p) => ['restObj',p]}
     / key ":" IDENT "=" expr                               ${(k,_,id,_2,e) => ['optionalProp',k,id,e]}
-    / key ":" pattern                                      ${(k,_,p) => ['matchProp',k,p]};
+    / key ":" pattern                                      ${(k,_,p) => ['matchProp',k,p]}
+    / IDENT "=" expr                                       ${(id,_,e) => ['optionalProp',id,id,e]}
+    / IDENT                                                ${id => ['matchProp',id,id]};
 
     key ::= IDENT / STRING;
 
