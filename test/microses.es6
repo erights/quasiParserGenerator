@@ -127,6 +127,6 @@ module.exports = (function() {
     / "default" ":"                                        ${(_,_2) => ['default']};
 
     block ::= "{" body "}"                                 ${(_,b,_2) => b};
-    body ::= (statement / declaration)*;
+    body ::= (statement / declaration)*                    ${ms => ['body', ms]};
   `;
 }());
