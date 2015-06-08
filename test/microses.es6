@@ -131,7 +131,7 @@ module.exports = (function() {
     terminator ::=
       "return" NO_NEWLINE expr ";"                         ${(_,_2,e,_3) => ['return',e]}
     / "return" ";"                                         ${(_,_2) => ['return']}
-    / "break" ";"                                          ${_ => ['break']}
+    / "break" ";"                                          ${(_,_2) => ['break']}
     / "throw" expr ";"                                     ${(_,e,_2) => ['throw',e]};
 
     declaration ::= declOp (pattern "=" expr) ** "," ";"   ${(op,decls,_) => [op, decls]};
