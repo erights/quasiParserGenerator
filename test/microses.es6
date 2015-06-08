@@ -11,8 +11,8 @@ module.exports = (function() {
     if (ms.length === 1) {
       const [[m,pairs]] = ms;
       result.push(m);
-      for ([e,q] of pairs) {
-        result.push(e,q);
+      for ([q,e] of pairs) {
+        result.push(q,e);
       }
     }
     result.push(t);
