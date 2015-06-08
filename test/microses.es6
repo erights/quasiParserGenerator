@@ -127,7 +127,7 @@ module.exports = (function() {
     catcher ::= "catch" "(" pattern ")" block              ${(_,_2,p,_3,b) => ['catch',p,b]};
     finalizer ::= "finally" block                          ${(_,b) => ['finally',b]};
 
-    branch ::= caseLabel+ "{" body terminator "}"          ${(cs,_,b,t,_2) => ['branch',cs,b,t]};
+    branch ::= caseLabel+ "{" body terminator "}"          ${(cs,_,b,t,_2) => ['branch',cs,[...b,...t]]};
     caseLabel ::=
       "case" expr ":"                                      ${(_,e) => ['case', e]}
     / "default" ":"                                        ${(_,_2) => ['default']};
