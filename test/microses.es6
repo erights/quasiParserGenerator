@@ -6,6 +6,19 @@ module.exports = (function() {
 
   const binary = (left,rights) => rights.reduce((prev,[op,right]) => [op,prev,right], left);
 
+  const qunpack = (h,ms,t) => {
+    const result = [h];
+    if (ms.length === 1) {
+      const [[m,...pairs]] = ms;
+      result.push(m);
+      for ([e,q] of pairs) {
+        result.push(e,q);
+      }
+    }
+    result.push(t);
+    return result;
+  }
+
   // const {Packratter} = require('../src/scanner.es6');
   // Packratter._debug = true;
 
@@ -50,8 +63,8 @@ module.exports = (function() {
     key ::= IDENT / STRING;
 
     quasiExpr ::=
-      QUASI_ALL
-    / QUASI_HEAD (expr (QUASI_MID expr)*)? QUASI_TAIL      ${(h,pairs,tail) => ['quasi',h,pairs,t]};
+      QUASI_ALL                                            ${q => ['quasi',[q]]}
+    / QUASI_HEAD (expr (QUASI_MID expr)*)? QUASI_TAIL      ${(h,ms,t) => ['quasi',qunpack(h,ms,t)]};
 
     later ::= NO_NEWLINE "!";
 
