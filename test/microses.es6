@@ -24,7 +24,7 @@ module.exports = (function() {
     pattern ::=
       (NUMBER / STRING / "null" / "true" / "false")        ${n => (..._) => ['matchData',JSON.parse(n)]}
     / "[" param ** "," "]"                                 ${(_,ps,_2) => ['matchArray',ps]}
-    / "{" propParam "," "}"                                ${(_,ps,_2) => ['matchObj',ps]}
+    / "{" propParam ** "," "}"                             ${(_,ps,_2) => ['matchObj',ps]}
     / IDENT                                                ${id => ['bind',id]}
     / HOLE                                                 ${h => ['patternHole',h]};
 
@@ -93,8 +93,8 @@ module.exports = (function() {
     assignOp ::= "=" / "*=" / "/=" / "%=" / "+=" / "-=";
 
     arrow ::=
-      params NO_NEWLINE "=>" expr                          ${(ps,_,_2,e) => ['lambda',ps,e]}
-    / params NO_NEWLINE "=>" block                         ${(ps,_,_2,b) => ['arrow',ps,b]};
+      params NO_NEWLINE "=>" block                         ${(ps,_,_2,b) => ['arrow',ps,b]}
+    / params NO_NEWLINE "=>" expr                          ${(ps,_,_2,e) => ['lambda',ps,e]};
     params ::=
       IDENT                                                ${id => [id]}
     / "(" param ** "," ")"                                 ${(_,ps,_2) => ps};
