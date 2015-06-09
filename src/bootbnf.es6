@@ -57,6 +57,15 @@ module.exports = (function(){
           }
           const tokenTypeListSrc =
                 `[${[...tokenTypes].map(tt => JSON.stringify(tt)).join(', ')}]`;
+          // rules[0] is the ast of the first rule, which has the form
+          // ["def", ruleName, body], so rules[0][1] is the name of
+          // the start rule. We prepend "rule_" to get the name of the
+          // JS method that implements the start rule. We invoke it
+          // with (0) so that it will parse starting at position 0. It
+          // returns a pair of the final position (after the last
+          // non-EOF token parsed), and the semantic value. On failure
+          // to parse, the semantic value will be FAIL.
+          const name = rules[0][1];
           return (
 `(function(${paramSrcs.join(', ')}) {
   return BaseParser => class extends BaseParser {
@@ -64,15 +73,7 @@ module.exports = (function(){
       super(template, ${tokenTypeListSrc}.concat(tokenTypeList));
     }
     start() {
-      // rules[0] is the ast of the first rule, which has the form
-      // ["def", ruleName, body], so rules[0][1] is the name of the
-      // start rule. We prepend "rule_" to get the name of the JS
-      // method that implements the start rule. We invoke it with
-      // (0) so that it will parse starting at position 0. It returns
-      // a pair of the final position (after the last non-EOF token
-      // parsed), and the semantic value. On failure to parse, the
-      // semantic value will be FAIL.
-      const pair = this.run(this.rule_${rules[0][1]}, 0);
+      const pair = this.run(this.rule_${name}, 0, ${JSON.stringify(name)});
       if (pair[1] == FAIL) {
         this.syntaxError(0, pair[0]);
       }
@@ -181,7 +182,8 @@ if (value.length === 0) value = FAIL;`);
           return vtable['++'](patt, ['empty']);
         },
         'super'(ident) {
-          return `[pos, value] = this.run(super.rule_${ident}, pos);`;
+          return `[pos, value] = this.run(super.rule_${ident}, pos, ${
+              JSON.stringify(ident)});`;
         },
         apply(hole) {
           numSubs = Math.max(numSubs, hole + 1);
@@ -190,13 +192,16 @@ if (value.length === 0) value = FAIL;`);
       });
 
       if (typeof sexp === 'string') {
+        // If sexp is already a string literal, this will doubly quote it,
+        // which is what we want.
+        const nameStr = JSON.stringify(sexp);
         if (sc.allRE(sc.STRING_RE).test(sexp)) {
           tokenTypes.add(sexp);
-          return `[pos, value] = this.run(${sexp}, pos);`;
+          return `[pos, value] = this.run(${sexp}, pos, ${nameStr});`;
         }
         if (sc.allRE(sc.IDENT_RE).test(sexp)) {
           // Assume a standalone identifier is a rule name.
-          return `[pos, value] = this.run(this.rule_${sexp}, pos);`;
+          return `[pos, value] = this.run(this.rule_${sexp}, pos, ${nameStr});`;
         }
         throw new Error('unexpected: ' + sexp);
       }

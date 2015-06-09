@@ -19,11 +19,31 @@ module.exports = (function() {
     return result;
   }
 
-  // const {Packratter} = require('../src/scanner.es6');
+  const {FAIL, Packratter} = require('../src/scanner.es6');
   // Packratter._debug = true;
 
+  // NO_NEWLINE is a lexical-level placeholder. Must never consume
+  // anything. Should fail if the whitespace to skip over contains a
+  // newline. Currently this placeholder always succeeds.
+
+  // QUASI_* are lexical-level placeholders. QUASI_ALL should match a
+  // self-contained template literal string that has no holes " `...`
+  // ". QUASI_HEAD should match the initial literal part of a template
+  // literal with holes " `...${ ". QUASI_MID should match the middle
+  // " }...${ ", and QUASI_TAIL the end " }...` ". The reason these
+  // are difficult is that a } during a hole only terminates the hole
+  // if it is balanced.  All these placeholders currently fail.
+
   const microses = bnf`
-    start ::= body EOF                                     ${(b,_) => ['script', b]};
+    start ::= body EOF                                     ${(b,_) => (..._) => ['script', b]};
+
+    NO_NEWLINE ::= ;
+
+    QUASI_ALL ::= ${() => FAIL};
+    QUASI_HEAD ::= ${() => FAIL};
+    QUASI_MID ::= ${() => FAIL};
+    QUASI_TAIL ::= ${() => FAIL};
+
 
     primaryExpr ::=
       (NUMBER / STRING / "null" / "true" / "false")        ${n => ['data',JSON.parse(n)]}
@@ -125,8 +145,7 @@ module.exports = (function() {
     / "switch" "(" expr ")" "{" branch* "}"                ${(_,_2,e,_3,_4,bs,_5) => ['switch',e,bs]}
     / terminator
     / "debugger" ";"                                       ${(_,_2) => ['debugger']}
-    / expr ";"                                             ${(e,_) => e}
-    /                                                      ${() => ['empty']};
+    / expr ";"                                             ${(e,_) => e};
 
     terminator ::=
       "return" NO_NEWLINE expr ";"                         ${(_,_2,e,_3) => ['return',e]}
@@ -148,4 +167,9 @@ module.exports = (function() {
     block ::= "{" body "}"                                 ${(_,b,_2) => ['block', b]};
     body ::= (statement / declaration)*;
   `;
+
+  console.log('----------');
+  const ast = microses`2 + 3 ;`;
+  console.log(JSON.stringify(ast));
+
 }());

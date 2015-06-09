@@ -50,13 +50,17 @@ module.exports = (function(){
    * should wrap SES's confine rather than export it directly, it
    * order to continue to support ES6 expressions.
    */
-  function confine(expr, env) {
+  function confine(exprSrc, env) {
+    exprSrc = ''+exprSrc;
     const names = Object.getOwnPropertyNames(env);
+    // Note: no newline prior to ${exprSrc}, so that line number for
+    // errors within exprSrc are accurate. Column numbers on the first
+    // line won't be, but will on following lines.
     let closedFuncSrc =
-`(function(${names.join(',')}) {
-  "use strict";
-  return ${expr};
-})`
+`(function(${names.join(',')}) { "use strict"; return ${exprSrc};
+})
+//# sourceURL=data:${encodeURIComponent(exprSrc)}
+`;
     closedFuncSrc = to5.transform(closedFuncSrc).code;
     const closedFunc = (1,eval)(closedFuncSrc);
     return closedFunc(...names.map(n => env[n]));

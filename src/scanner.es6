@@ -6,6 +6,7 @@ module.exports = (function(){
 
   const FAIL = def({toString: () => 'FAIL'});
   const EOF = def({toString: () => 'EOF'});
+  const LEFT_RECUR = def({toString: () => 'LEFT_RECUR'});
 
   // JSON compat group. See json.org
   const SPACE_RE = /\s+/;
@@ -146,8 +147,8 @@ module.exports = (function(){
 
   /**
    * To call the packrat-memoized form of a rule N, call
-   * this.run(this.rule_N, pos) rather than
-   * this.rule_N(pos). Likewise, call this.run(super.rule_N, pos)
+   * this.run(this.rule_N, pos, 'N') rather than
+   * this.rule_N(pos). Likewise, call this.run(super.rule_N, pos, 'N')
    * rather than super.rule_N(pos).
    */
   class Packratter {
@@ -160,7 +161,7 @@ module.exports = (function(){
       // all, this is mutable state our clients can corrupt.
       this._counts = {hits: 0, misses: 0};
     }
-    run(ruleOrPatt, pos) {
+    run(ruleOrPatt, pos, name) {
       let posm = this._memo.get(pos);
       if (!posm) {
         posm = new Map()
@@ -168,11 +169,17 @@ module.exports = (function(){
       }
       let result = posm.get(ruleOrPatt);
       if (result) {
+        if (result === LEFT_RECUR) {
+          throw new Error(`Left recursion on rule: ${name}`);
+        }
         this._counts.hits++;
       } else {
+        posm.set(ruleOrPatt, LEFT_RECUR);
         this._counts.misses++;
         if (typeof ruleOrPatt === 'function') {
           result = ruleOrPatt.call(this, pos);
+        } else if (ruleOrPatt === void 0) {
+          throw new Error(`Rule missing: ${name}`);
         } else {
           result = this.eat(pos, ruleOrPatt);
         }
@@ -283,7 +290,7 @@ ${JSON.stringify(this.template, void 0, ' ')}
         if (pair[1] !== FAIL) {
           pos = pair[0];
         } else {
-          pair = this.run(this.rule_COMMENT, pos);
+          pair = this.run(this.rule_COMMENT, pos, 'COMMENT');
           if (pair[1] !== FAIL) {
             pos = pair[0];
           } else {
