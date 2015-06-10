@@ -283,7 +283,8 @@ ${JSON.stringify(this.template, void 0, ' ')}
 -------`);
       const [last, fails] = this.lastFailures();
       const tokStr = last < this.toks.length ?
-        `At ${this.toks[last]}` : `After ${this.toks[this.toks.length - 1]}`;
+        `At ${this.toks[last]}` :
+        `Unexpected EOF after ${this.toks[this.toks.length - 1]}`;
       const failStr = fails.length === 0 ? 
         `stuck` : `looking for ${fails.join(' ')}`;
       throw new SyntaxError(`${tokStr} ${failStr}`);
