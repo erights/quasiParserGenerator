@@ -195,13 +195,18 @@ module.exports = (function(){
         console.log('\n');
         for (let [pos, posm] of this._memo) {
           var fails = [];
-          for (let [ruleOrPatt, [newPos, v]] of posm) {
-          const name = typeof ruleOrPatt === 'function' ? 
+          for (let [ruleOrPatt, result] of posm) {
+            const name = typeof ruleOrPatt === 'function' ? 
                            ruleOrPatt.name : JSON.stringify(ruleOrPatt);
-            if (v === FAIL) {
-              fails.push(name);
+            if (result === LEFT_RECUR) {
+              console.log(`${name}(${pos}) => left recursion detector`);
             } else {
-              console.log(`${name}(${pos}) => [${newPos}, ${v}]`);
+              const [newPos, v] = result;
+              if (v === FAIL) {
+                fails.push(name);
+              } else {
+                console.log(`${name}(${pos}) => [${newPos}, ${v}]`);
+              }
             }
           }
           if (fails.length >= 1) {
