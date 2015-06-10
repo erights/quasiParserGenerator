@@ -47,7 +47,7 @@ module.exports = (function(){
     // must emulate it
     const superExec = RegExp.prototype.exec;
     stickyRE = function stickyREShim(RE) {
-      var result = RegExp(RE.source, RE.flags + 'g');
+      const result = RegExp(RE.source, RE.flags + 'g');
       result.exec = function stickyExec(str) {
         const start = this.lastIndex;
         const arr = superExec.call(this, str);
@@ -190,13 +190,34 @@ module.exports = (function(){
       }
       return result;
     }
+    lastFailures() {
+      let maxPos = 0;
+      let fails = [];
+      for (let [pos, posm] of this._memo) {
+        for (let [ruleOrPatt, result] of posm) {
+          if (typeof ruleOrPatt !== 'function' && result !== LEFT_RECUR) {
+            const fail = JSON.stringify(''+ruleOrPatt);
+            const [newPos, v] = result;
+            if (v === FAIL) {
+              if (newPos > maxPos) {
+                maxPos = newPos;
+                fails = [fail];
+              } else if (newPos === maxPos) {
+                fails.push(fail);
+              }
+            }
+          }
+        }
+      }
+      return [maxPos, fails];
+    }
     done() {
       if (this.constructor._debug) {
         console.log('\n');
         for (let [pos, posm] of this._memo) {
-          var fails = [];
+          const fails = [];
           for (let [ruleOrPatt, result] of posm) {
-            const name = typeof ruleOrPatt === 'function' ? 
+            const name = typeof ruleOrPatt === 'function' ?
                            ruleOrPatt.name : JSON.stringify(ruleOrPatt);
             if (result === LEFT_RECUR) {
               console.log(`${name}(${pos}) => left recursion detector`);
@@ -214,7 +235,7 @@ module.exports = (function(){
           }
         }
         console.log(`hits: ${this._counts.hits
-                            }, misses: ${this._counts.misses}`);
+                  }, misses: ${this._counts.misses}`);
       }
     }
   }
@@ -255,17 +276,18 @@ module.exports = (function(){
     start() {
       return this.toks.map(token => token.text);
     }
-
-    syntaxError(start, after, msg='failed to parse') {
+    syntaxError() {
       console.log(`
 -------template--------
 ${JSON.stringify(this.template, void 0, ' ')}
 -------`);
-      const firstTok = this.toks[start];
-      const lastTok = this.toks[Math.max(start, after - 1)];
-      throw new SyntaxError(`from ${firstTok} to ${lastTok}`);
+      const [last, fails] = this.lastFailures();
+      const tokStr = last < this.toks.length ?
+        `At ${this.toks[last]}` : `After ${this.toks[this.toks.length - 1]}`;
+      const failStr = fails.length === 0 ? 
+        `stuck` : `looking for ${fails.join(' ')}`;
+      throw new SyntaxError(`${tokStr} ${failStr}`);
     }
-
     skip(pos, RE) {
       if (pos < this.toks.length) {
         const token = this.toks[pos];

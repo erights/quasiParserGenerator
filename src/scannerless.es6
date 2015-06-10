@@ -5,7 +5,7 @@ module.exports = (function(){
   const {def} = require('./sesshim.es6');
   const {FAIL, EOF,
     SPACE_RE, NUMBER_RE, STRING_RE, IDENT_RE,
-    LINE_COMMENT_RE, stickyRE, 
+    LINE_COMMENT_RE, stickyRE,
     Pos, Packratter} = require('./scanner.es6');
   const {quasifyParser, bnf} = require('./bootbnf.es6');
 
@@ -49,18 +49,29 @@ module.exports = (function(){
       }
       return EOF;
     }
-    syntaxError(start, after, msg='failed to parse') {
+    syntaxError() {
       console.log(`
 -------template--------
 ${JSON.stringify(this.template, void 0, ' ')}
 -------`);
-      const st = this.find(start);
-      const af = this.find(after);
-      throw new SyntaxError(`from ${st} upto ${af}`);
+      const [last, fails] = this.lastFailures();
+      const found = find(last);
+      // TODO need better diagnostic info. See syntaxError in Scanner.
+      let tokStr = `unexpected at ${last}`;
+      if (found === EOF) {
+        tokStr = `Unexpected EOF`;
+      } else if (Array.isArray(found)) {
+        tokStr = `${found[0]}:${found[1]}`;
+      } else if (typeof found === 'number') {
+        tokStr = `hole ${found}`;
+      }
+      const failStr = fails.length === 0 ? 
+        `stuck` : `looking for ${fails.join(' ')}`;
+      throw new SyntaxError(`${tokStr} ${failStr}`);
     }
     // Meant to be overridden, but must always succeed
     // Callers should not memoize calls to rule_SKIP as it is likely
-    // not worth it. 
+    // not worth it.
     rule_SKIP(pos) {
       return [pos, ''];
     }

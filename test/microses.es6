@@ -122,7 +122,7 @@ module.exports = (function() {
 
     lValue ::= IDENT / fieldExpr;
 
-    fieldExpr ::= 
+    fieldExpr ::=
       primaryExpr "." IDENT                                ${(pe,_,id) => ['get',pe,id]}
     / primaryExpr "[" expr "]"                             ${(pe,_,e,_2) => ['index',pe,e]}
     / primaryExpr later "." IDENT                          ${(pe,_,_2,id) => ['getLater',pe,id]}
@@ -174,7 +174,7 @@ module.exports = (function() {
   `;
 
   console.log('----------');
-  const ast = microses`2 + 3 ;`;
+  const ast = microses`2+3;`;
   console.log(JSON.stringify(ast));
 
 }());
