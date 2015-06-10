@@ -143,7 +143,10 @@ if ((value = ${vSrc}) === FAIL) pos = ${posSrc};`);
 if (value !== FAIL) value = act_${hole}(...value);`);
         },
         '**'(patt, sep) {
+          // for backtracking
           const posSrc = nextVar('pos');
+          // a non-advancing success only repeats once.
+          const startSrc = nextVar('pos');
           const sSrc = nextVar('s');
           const pattSrc = peval(patt);
           const sepSrc = peval(sep);
@@ -152,6 +155,7 @@ if (value !== FAIL) value = act_${hole}(...value);`);
 `${sSrc} = [];
 ${posSrc} = pos;
 while (true) {
+  ${startSrc} = pos;
   ${indent(pattSrc,`
   `)}
   if (value === FAIL) {
@@ -163,6 +167,7 @@ while (true) {
   ${indent(sepSrc,`
   `)}
   if (value === FAIL) break;
+  if (pos === ${startSrc}) break;
 }
 value = ${sSrc};`);
         },

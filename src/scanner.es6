@@ -162,6 +162,9 @@ module.exports = (function(){
       this._counts = {hits: 0, misses: 0};
     }
     run(ruleOrPatt, pos, name) {
+      if (this.constructor._debug) {
+        console.log(`run(f, ${pos}, ${name})`);
+      }
       let posm = this._memo.get(pos);
       if (!posm) {
         posm = new Map()
