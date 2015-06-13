@@ -3,23 +3,31 @@ module.exports = (function(){
   "use strict";
 
   const {def} = require('./sesshim.es6');
+  const {re} = require('./qregexp.es6');
 
   const FAIL = def({toString: () => 'FAIL'});
   const EOF = def({toString: () => 'EOF'});
   const LEFT_RECUR = def({toString: () => 'LEFT_RECUR'});
 
+
   // JSON compat group. See json.org
-  const SPACE_RE = /\s+/;
-  const NUMBER_RE = /-?\d+(?:\.\d+)?(?:[eE]-?\d+)?/;
+  const SPACE_RE = re`\s+`;
+  const NUMBER_RE = re`-?\d+(?:\.\d+)?(?:[eE]-?\d+)?`;
+  const UCODE_RE = re`\\u[\da-fA-F]{4}`;
   // Note no \' (escaped single quote) in accord with JSON.
-  const CHAR_RE = /[^\"\\]|\\"|\\\\|\\\/|\\b|\\f|\\n|\\r|\\t|\\u[\da-fA-F]{4}/
-  const STRING_RE_SRC = '\\"(?:' + CHAR_RE.source +  ')*\\"';
-  const STRING_RE = RegExp(STRING_RE_SRC);
-  const IDENT_RE = /[a-zA-Z_\$][\w\$]*/;
+  const CHAR_RE = re`[^\"\\]|\\"|\\\\|\\\/|\\b|\\f|\\n|\\r|\\t|${UCODE_RE}`;
+  const STRING_RE = re`\"${CHAR_RE}*\"`;
+  const IDENT_RE = re`[a-zA-Z_\$][\w\$]*`;
+
+  // Cheap universal-enough token productions for ad hoc DSLs
+  const SINGLE_OP = re`[\[\]\(\){},;]`;
+  const MULTI_OP = re`[:~@%&+=*<>.?|\\\-\^\/]+`;
+  const LINE_COMMENT_RE = re`#.*\n`;
+
 
   // Like RE but must match entire string
   function allRE(RE) {
-    return RegExp('^' + RE.source + '$', RE.flags);
+    return re(RE.flags)`^${RE}$`;
   }
 
   // Matches if it matches any of the argument RegExps
@@ -29,12 +37,12 @@ module.exports = (function(){
 
   // Turn RE into a capture group
   function captureRE(RE) {
-    return RegExp('(' + RE.source + ')', RE.flags);
+    return re(RE.flags)`(${RE})`;
   }
 
   // Like RE but as if the sticky ('y') flag is on.
   // RE itself should have neither the 'y' nor 'g' flag set,
-  // and it should not being with a "^" (start anchor).
+  // and it should not begin with a "^" (start anchor).
   function stickyRE(RE) {
     return RegExp(RE.source, RE.flags + 'y');
   }
@@ -126,12 +134,26 @@ module.exports = (function(){
       }
       return result;
     }
+
+    static prettyTemplate(template) {
+      const numSubs = template.length - 1;
+      const result = [];
+      for (let segnum = 0; segnum <= numSubs; segnum++) {
+        result.push(template[segnum]);
+        if (segnum < numSubs) {
+          let c = '\u221e';
+          if (segnum === 0) {
+            c = '\u24ea';
+          } else if (1 <= segnum && segnum <= 20) {
+            c = String.fromCharCode(0x2460 + segnum - 1);
+          }
+          result.push(c);
+        }
+      }
+      return result.join('');
+    }
   }
 
-  // Cheap universal-enough token productions for ad hoc DSLs
-  const SINGLE_OP = /[\[\]\(\){},;]/;
-  const MULTI_OP = /[:~@%&+=*<>.?|\\\-\^\/]+/;
-  const LINE_COMMENT_RE = /#.*\n/;
 
   // Breaks a string into tokens for cheap ad hoc DSLs
   const TOKEN_RE = captureRE(anyRE(
