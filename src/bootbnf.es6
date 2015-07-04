@@ -108,7 +108,7 @@ module.exports = (function(){
 `${cSrc}
 if (value !== FAIL) break ${labelSrc};`).join('\n');
 
-        return (
+          return (
 `${labelSrc}: {
   ${indent(choicesSrc,`
   `)}
