@@ -74,7 +74,7 @@ module.exports = (function(){
     }
     start() {
       const pair = this.run(this.rule_${name}, 0, ${JSON.stringify(name)});
-      if (pair[1] == FAIL) {
+      if (pair[1] === FAIL) {
         this.syntaxError();
       }
       return pair[1];

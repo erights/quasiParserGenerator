@@ -42,7 +42,7 @@ module.exports = (function(){
         const seglen = segment.length;
         if (relpos < seglen) {
           return [segnum, relpos];
-        } else if (relpos == seglen && segnum < numSubs) {
+        } else if (relpos === seglen && segnum < numSubs) {
           return segnum;  // as hole number
         }
         relpos -= seglen + 1; // "+1" for the skipped hole
