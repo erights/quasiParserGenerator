@@ -53,7 +53,7 @@ module.exports = (function(){
 
           const paramSrcs = [];
           for (let i = 0; i < numSubs; i++) {
-            paramSrcs.push(`act_${i}`)
+            paramSrcs.push(`act_${i}`);
           }
           const tokenTypeListSrc =
                 `[${[...tokenTypes].map(tt => JSON.stringify(tt)).join(', ')}]`;
@@ -229,7 +229,7 @@ if (value.length === 0) value = FAIL;`);
         throw new Error(`${typeof quasiRest}: ${quasiRest}`);
       }
       return quasiRest(...subs);
-    }
+    };
   }
 
   function quasifyParser(Parser) {

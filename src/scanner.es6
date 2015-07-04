@@ -189,7 +189,7 @@ module.exports = (function(){
       }
       let posm = this._memo.get(pos);
       if (!posm) {
-        posm = new Map()
+        posm = new Map();
         this._memo.set(pos, posm);
       }
       let result = posm.get(ruleOrPatt);
