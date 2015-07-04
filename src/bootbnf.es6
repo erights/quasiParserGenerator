@@ -16,8 +16,8 @@ module.exports = (function(){
   }
 
   function compile(sexp) {
-    let numSubs = 0;
-    const tokenTypes = new Set();
+    let numSubs = 0;              // # of holes implied by sexp, so far
+    const tokenTypes = new Set(); // Literal tokens in sexp, so far
 
     // generated names
     // act_${i}      action parameter
