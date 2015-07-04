@@ -85,7 +85,6 @@ module.exports = (function(){
 `);
       },
       def(name, body) {
-        // The following line also initializes vars
         const bodySrc = peval(body);
         return (
 `rule_${name}(pos) {
