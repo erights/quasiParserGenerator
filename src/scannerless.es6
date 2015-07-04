@@ -25,9 +25,9 @@ module.exports = (function(){
     }
     start() {
       const result = [];
-      const numSubs = template.length - 1;
+      const numSubs = this.template.length - 1;
       for (let segnum = 0; segnum <= numSubs; segnum++) {
-        result.push(...template[segnum]);
+        result.push(...this.template[segnum]);
         if (segnum < numSubs) {
           result.push(segnum);  // as hole number
         }
