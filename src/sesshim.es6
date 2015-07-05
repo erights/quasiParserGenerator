@@ -34,7 +34,7 @@ module.exports = (function(){
    * <tt>env</tt> object. Unlike real <tt>confine</tt>, <ul>
    * <li>The faux <tt>confine</tt> does not have a third
    *     <tt>opt_options</tt> parameter. An options argument can of
-   *     course be provided by the caller, but it be ignored.
+   *     course be provided by the caller, but it will be ignored.
    * <li>The expression can be in the subset of ES6 supported by
    *     Babel.
    * <li>All dangerous globals that are not shadowed, such as "window"
@@ -53,7 +53,7 @@ module.exports = (function(){
   function confine(exprSrc, env) {
     exprSrc = ''+exprSrc;
     const names = Object.getOwnPropertyNames(env);
-    // Note: no newline prior to ${exprSrc}, so that line number for
+    // Note: no newline prior to ${exprSrc}, so that line numbers for
     // errors within exprSrc are accurate. Column numbers on the first
     // line won't be, but will on following lines.
     let closedFuncSrc =
