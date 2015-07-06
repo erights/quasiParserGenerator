@@ -16,8 +16,8 @@ module.exports = (function(){
   }
 
   function compile(sexp) {
-    let numSubs = 0;
-    const tokenTypes = new Set();
+    let numSubs = 0;              // # of holes implied by sexp, so far
+    const tokenTypes = new Set(); // Literal tokens in sexp, so far
 
     // generated names
     // act_${i}      action parameter
@@ -45,28 +45,27 @@ module.exports = (function(){
     }
 
 
-    function peval(sexp) {
-      const vtable = Object.freeze({
-        bnf(...rules) {
-          // The following line also initializes tokenTypes and numSubs
-          const rulesSrc = rules.map(peval).join('\n');
+    const vtable = Object.freeze({
+      bnf(...rules) {
+        // The following line also initializes tokenTypes and numSubs
+        const rulesSrc = rules.map(peval).join('\n');
 
-          const paramSrcs = [];
-          for (let i = 0; i < numSubs; i++) {
-            paramSrcs.push(`act_${i}`)
-          }
-          const tokenTypeListSrc =
-                `[${[...tokenTypes].map(tt => JSON.stringify(tt)).join(', ')}]`;
-          // rules[0] is the ast of the first rule, which has the form
-          // ["def", ruleName, body], so rules[0][1] is the name of
-          // the start rule. We prepend "rule_" to get the name of the
-          // JS method that implements the start rule. We invoke it
-          // with (0) so that it will parse starting at position 0. It
-          // returns a pair of the final position (after the last
-          // non-EOF token parsed), and the semantic value. On failure
-          // to parse, the semantic value will be FAIL.
-          const name = rules[0][1];
-          return (
+        const paramSrcs = [];
+        for (let i = 0; i < numSubs; i++) {
+          paramSrcs.push(`act_${i}`);
+        }
+        const tokenTypeListSrc =
+              `[${[...tokenTypes].map(tt => JSON.stringify(tt)).join(', ')}]`;
+        // rules[0] is the ast of the first rule, which has the form
+        // ["def", ruleName, body], so rules[0][1] is the name of
+        // the start rule. We prepend "rule_" to get the name of the
+        // JS method that implements the start rule. We invoke it
+        // with (0) so that it will parse starting at position 0. It
+        // returns a pair of the final position (after the last
+        // non-EOF token parsed), and the semantic value. On failure
+        // to parse, the semantic value will be FAIL.
+        const name = rules[0][1];
+        return (
 `(function(${paramSrcs.join(', ')}) {
   return BaseParser => class extends BaseParser {
     constructor(template, tokenTypeList=[]) {
@@ -74,7 +73,7 @@ module.exports = (function(){
     }
     start() {
       const pair = this.run(this.rule_${name}, 0, ${JSON.stringify(name)});
-      if (pair[1] == FAIL) {
+      if (pair[1] === FAIL) {
         this.syntaxError();
       }
       return pair[1];
@@ -84,27 +83,26 @@ module.exports = (function(){
   }
 })
 `);
-        },
-        def(name, body) {
-          // The following line also initializes vars
-          const bodySrc = peval(body);
-          return (
+      },
+      def(name, body) {
+        const bodySrc = peval(body);
+        return (
 `rule_${name}(pos) {
   ${takeVarsSrc()}
   ${indent(bodySrc,`
   `)}
   return [pos, value];
 }`);
-        },
-        empty() {
-          return `value = [];`;
-        },
-        fail() {
-          return `value = FAIL;`;
-        },
-        or(...choices) {
-          const labelSrc = nextLabel('or');
-          const choicesSrc = choices.map(peval).map(cSrc =>
+      },
+      empty() {
+        return `value = [];`;
+      },
+      fail() {
+        return `value = FAIL;`;
+      },
+      or(...choices) {
+        const labelSrc = nextLabel('or');
+        const choicesSrc = choices.map(peval).map(cSrc =>
 `${cSrc}
 if (value !== FAIL) break ${labelSrc};`).join('\n');
 
@@ -113,18 +111,18 @@ if (value !== FAIL) break ${labelSrc};`).join('\n');
   ${indent(choicesSrc,`
   `)}
 }`);
-        },
-        seq(...terms) {
-          const posSrc = nextVar('pos');
-          const labelSrc = nextLabel('seq');
-          const sSrc = nextVar('s');
-          const vSrc = nextVar('v');
-          const termsSrc = terms.map(peval).map(termSrc =>
+      },
+      seq(...terms) {
+        const posSrc = nextVar('pos');
+        const labelSrc = nextLabel('seq');
+        const sSrc = nextVar('s');
+        const vSrc = nextVar('v');
+        const termsSrc = terms.map(peval).map(termSrc =>
 `${termSrc}
 if (value === FAIL) break ${labelSrc};
 ${sSrc}.push(value);`).join('\n');
 
-          return (
+        return (
 `${sSrc} = [];
 ${vSrc} = FAIL;
 ${posSrc} = pos;
@@ -134,23 +132,23 @@ ${labelSrc}: {
   ${vSrc} = ${sSrc};
 }
 if ((value = ${vSrc}) === FAIL) pos = ${posSrc};`);
-        },
-        act(terms, hole) {
-          numSubs = Math.max(numSubs, hole + 1);
-          const termsSrc = vtable.seq(...terms);
-          return (
+      },
+      act(terms, hole) {
+        numSubs = Math.max(numSubs, hole + 1);
+        const termsSrc = vtable.seq(...terms);
+        return (
 `${termsSrc}
 if (value !== FAIL) value = act_${hole}(...value);`);
-        },
-        '**'(patt, sep) {
-          // for backtracking
-          const posSrc = nextVar('pos');
-          // a non-advancing success only repeats once.
-          const startSrc = nextVar('pos');
-          const sSrc = nextVar('s');
-          const pattSrc = peval(patt);
-          const sepSrc = peval(sep);
-          return (
+      },
+      '**'(patt, sep) {
+        // for backtracking
+        const posSrc = nextVar('pos');
+        // a non-advancing success only repeats once.
+        const startSrc = nextVar('pos');
+        const sSrc = nextVar('s');
+        const pattSrc = peval(patt);
+        const sepSrc = peval(sep);
+        return (
 // after first iteration, backtrack to before the separator
 `${sSrc} = [];
 ${posSrc} = pos;
@@ -170,32 +168,33 @@ while (true) {
   if (pos === ${startSrc}) break;
 }
 value = ${sSrc};`);
-        },
-        '++'(patt, sep) {
-          const starSrc = vtable['**'](patt, sep);
-          return (
+      },
+      '++'(patt, sep) {
+        const starSrc = vtable['**'](patt, sep);
+        return (
 `${starSrc}
 if (value.length === 0) value = FAIL;`);
-        },
-        '?'(patt) {
-          return vtable['**'](patt, ['fail']);
-        },
-        '*'(patt) {
-          return vtable['**'](patt, ['empty']);
-        },
-        '+'(patt) {
-          return vtable['++'](patt, ['empty']);
-        },
-        'super'(ident) {
-          return `[pos, value] = this.run(super.rule_${ident}, pos, ${
-              JSON.stringify(ident)});`;
-        },
-        apply(hole) {
-          numSubs = Math.max(numSubs, hole + 1);
-          return `[pos, value] = act_${hole}.call(this, pos);`;
-        }
-      });
+      },
+      '?'(patt) {
+        return vtable['**'](patt, ['fail']);
+      },
+      '*'(patt) {
+        return vtable['**'](patt, ['empty']);
+      },
+      '+'(patt) {
+        return vtable['++'](patt, ['empty']);
+      },
+      'super'(ident) {
+        return `[pos, value] = this.run(super.rule_${ident}, pos, ${
+            JSON.stringify(ident)});`;
+      },
+      apply(hole) {
+        numSubs = Math.max(numSubs, hole + 1);
+        return `[pos, value] = act_${hole}.call(this, pos);`;
+      }
+    });
 
+    function peval(sexp) {
       if (typeof sexp === 'string') {
         // If sexp is already a string literal, this will doubly quote it,
         // which is what we want.
@@ -229,7 +228,7 @@ if (value.length === 0) value = FAIL;`);
         throw new Error(`${typeof quasiRest}: ${quasiRest}`);
       }
       return quasiRest(...subs);
-    }
+    };
   }
 
   function quasifyParser(Parser) {

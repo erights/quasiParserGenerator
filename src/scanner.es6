@@ -189,7 +189,7 @@ module.exports = (function(){
       }
       let posm = this._memo.get(pos);
       if (!posm) {
-        posm = new Map()
+        posm = new Map();
         this._memo.set(pos, posm);
       }
       let result = posm.get(ruleOrPatt);
@@ -271,7 +271,7 @@ module.exports = (function(){
    * provides a simple conventional lexer, where the production rules
    * correspond to conventional token types. Parsers defined using the
    * <tt>bootbnf.bnf</tt> tag that extend this one generally define
-   * the second level of a two level grammar. It you wish to inheric
+   * the second level of a two level grammar. It you wish to inherit
    * from Scanner in order to define a derived lexer, you probably
    * need to use EcmaScript class inheritance directly.
    */

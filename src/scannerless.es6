@@ -25,9 +25,9 @@ module.exports = (function(){
     }
     start() {
       const result = [];
-      const numSubs = template.length - 1;
+      const numSubs = this.template.length - 1;
       for (let segnum = 0; segnum <= numSubs; segnum++) {
-        result.push(...template[segnum]);
+        result.push(...this.template[segnum]);
         if (segnum < numSubs) {
           result.push(segnum);  // as hole number
         }
@@ -42,7 +42,7 @@ module.exports = (function(){
         const seglen = segment.length;
         if (relpos < seglen) {
           return [segnum, relpos];
-        } else if (relpos == seglen && segnum < numSubs) {
+        } else if (relpos === seglen && segnum < numSubs) {
           return segnum;  // as hole number
         }
         relpos -= seglen + 1; // "+1" for the skipped hole
@@ -139,7 +139,7 @@ ${JSON.stringify(this.template, void 0, ' ')}
     };
   }
 
-  // Has the same token-level API as defaulBaseGrammar
+  // Has the same token-level API as defaultBaseGrammar
   const scannerless = bnf.extends(baseScannerless)`
     start ::= TOKEN* EOF                       ${(toks,_) => toks};
     SKIP ::= (SPACE / COMMENT)*;
