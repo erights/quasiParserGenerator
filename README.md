@@ -65,7 +65,7 @@ The ```**``` operator is an infix generalization of the usual postfix ```*```, w
 
 ```NUMBER``` and ```STRING``` are both recognized using the corresponding JSON productions. ```IDENT``` is what you'd expect. ```EOF``` recognizes the end of input.
 
-Quoted identifiers are keywords, and are therefore not recognized by the ```IDENT``` production within that grammer. Other quoted strings are literal tokens, but currently, only if they fit within the cheezy rules for recognizing operator tokens. See src/scanner.es6 for the current specifics. Instead, the operator token recognizition for a given grammar should be based on which quoted strings actually appear in the grammar.
+Quoted identifiers are keywords, and are therefore not recognized by the ```IDENT``` production within that grammer. Other quoted strings are literal tokens, but currently, only if they fit within the cheezy rules for recognizing operator tokens. See src/scanner.es6 for the current specifics. Instead, the operator token recognition for a given grammar should be based on which quoted strings actually appear in the grammar.
 
 # Grammar Inheritance
 
