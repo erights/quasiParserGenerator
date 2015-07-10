@@ -1,4 +1,5 @@
 // Options: --free-variable-checker --require --validate
+/*global module require*/
 
 /**
  * Note that this test is a .js file written in ES5.

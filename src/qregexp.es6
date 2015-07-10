@@ -1,4 +1,6 @@
 // Options: --free-variable-checker --require --validate
+/*global module require*/
+
 module.exports = (function(){
   "use strict";
 
@@ -17,7 +19,7 @@ module.exports = (function(){
       for (let i = 0; i < numSubs; i++) {
         parts.push(template.raw[i]);
         const subst = subs[i] instanceof RegExp ?
-            `(?:${subs[i].source})` : 
+            `(?:${subs[i].source})` :
             subs[i].replace(/[\/\\^$*+?.()|[\]{}]/g, '\\$&');
         parts.push(subst);
       }
@@ -37,6 +39,11 @@ module.exports = (function(){
   const rex = re('i')`^${'^$'}$`;
   console.log(rex);
   console.log(re`${rex}|${rex}*|${'\\'}`);
+
+  const data = ':x';
+  const rebad = re`(?${data})`;
+  console.log(rebad);
+  console.log(rebad.test('x'));
 */
 
   return def({re});

@@ -1,4 +1,6 @@
 // Options: --free-variable-checker --require --validate
+/*global module require*/
+
 module.exports = (function(){
   "use strict";
 
@@ -189,7 +191,7 @@ module.exports = (function(){
       }
       let posm = this._memo.get(pos);
       if (!posm) {
-        posm = new Map()
+        posm = new Map();
         this._memo.set(pos, posm);
       }
       let result = posm.get(ruleOrPatt);
@@ -307,7 +309,7 @@ ${JSON.stringify(this.template, void 0, ' ')}
       const tokStr = last < this.toks.length ?
         `At ${this.toks[last]}` :
         `Unexpected EOF after ${this.toks[this.toks.length - 1]}`;
-      const failStr = fails.length === 0 ? 
+      const failStr = fails.length === 0 ?
         `stuck` : `looking for ${fails.join(' ')}`;
       throw new SyntaxError(`${tokStr} ${failStr}`);
     }

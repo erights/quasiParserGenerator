@@ -1,4 +1,6 @@
 // Options: --free-variable-checker --require --validate
+/*global module require*/
+
 module.exports = (function(){
   "use strict";
 
@@ -229,7 +231,7 @@ if (value.length === 0) value = FAIL;`);
         throw new Error(`${typeof quasiRest}: ${quasiRest}`);
       }
       return quasiRest(...subs);
-    }
+    };
   }
 
   function quasifyParser(Parser) {

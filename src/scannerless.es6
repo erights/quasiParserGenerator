@@ -1,4 +1,6 @@
 // Options: --free-variable-checker --require --validate
+/*global module require*/
+
 module.exports = (function(){
   "use strict";
 
@@ -25,9 +27,9 @@ module.exports = (function(){
     }
     start() {
       const result = [];
-      const numSubs = template.length - 1;
+      const numSubs = this.template.length - 1;
       for (let segnum = 0; segnum <= numSubs; segnum++) {
-        result.push(...template[segnum]);
+        result.push(...this.template[segnum]);
         if (segnum < numSubs) {
           result.push(segnum);  // as hole number
         }
@@ -55,7 +57,7 @@ module.exports = (function(){
 ${JSON.stringify(this.template, void 0, ' ')}
 -------`);
       const [last, fails] = this.lastFailures();
-      const found = find(last);
+      const found = this.find(last);
       // TODO need better diagnostic info. See syntaxError in Scanner.
       let tokStr = `unexpected at ${last}`;
       if (found === EOF) {
@@ -65,7 +67,7 @@ ${JSON.stringify(this.template, void 0, ' ')}
       } else if (typeof found === 'number') {
         tokStr = `hole ${found}`;
       }
-      const failStr = fails.length === 0 ? 
+      const failStr = fails.length === 0 ?
         `stuck` : `looking for ${fails.join(' ')}`;
       throw new SyntaxError(`${tokStr} ${failStr}`);
     }

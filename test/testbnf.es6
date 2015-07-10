@@ -1,4 +1,6 @@
 // Options: --free-variable-checker --require --validate
+/*global module require*/
+
 module.exports = (function(){
   "use strict";
 

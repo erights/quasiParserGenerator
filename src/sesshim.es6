@@ -1,4 +1,5 @@
 // Options: --free-variable-checker --require --validate
+/*global module require*/
 
 /**
  * By requiring sesshim.es6, if you are not already in a SES
