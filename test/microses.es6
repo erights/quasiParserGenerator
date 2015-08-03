@@ -13,13 +13,13 @@ module.exports = (function() {
     if (ms.length === 1) {
       const [[m,pairs]] = ms;
       result.push(m);
-      for ([q,e] of pairs) {
+      for (let [q,e] of pairs) {
         result.push(q,e);
       }
     }
     result.push(t);
     return result;
-  }
+  };
 
   const {FAIL, Packratter} = require('../src/scanner.es6');
   // Packratter._debug = true;
@@ -147,8 +147,8 @@ module.exports = (function() {
     / "for" "(" declaration "of" expr ")" block            ${(_,_2,d,_3,e,_4,b) => ['forOf',d,e,b]}
     / "while" "(" expr ")" block                           ${(_,_2,c,_3,b) => ['while',c,b]}
     / "try" block catcher finalizer                        ${(_,b,c,f) => ['try',b,c,f]}
-    / "try" block finalizer                                ${(_,c,f) => ['try',b,f]}
-    / "try" block catcher                                  ${(_,b,c,f) => ['try',b,c]}
+    / "try" block finalizer                                ${(_,b,f) => ['try',b,f]}
+    / "try" block catcher                                  ${(_,b,c) => ['try',b,c]}
     / "switch" "(" expr ")" "{" branch* "}"                ${(_,_2,e,_3,_4,bs,_5) => ['switch',e,bs]}
     / terminator
     / "debugger" ";"                                       ${(_,_2) => ['debugger']}
