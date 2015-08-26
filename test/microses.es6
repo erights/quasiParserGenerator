@@ -109,8 +109,7 @@ module.exports = (function() {
 
     preOp ::= "void" / "typeof" / "+" / "-" / "!";
 
-    powExpr ::= preExpr ("**" powExpr)?                    ${binary};
-    multExpr ::= powExpr (("*" / "/" / "%") powExpr)*      ${binary};
+    multExpr ::= preExpr (("*" / "/" / "%") preExpr)*      ${binary};
     addExpr ::= multExpr (("+" / "-") multExpr)*           ${binary};
     relExpr ::= addExpr (relOp addExpr)?                   ${binary};
     relOp ::= "<" / ">" / "<=" / ">=" / "===" / "!==";
