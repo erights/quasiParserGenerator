@@ -5,16 +5,13 @@ module.exports = (function(){
   "use strict";
 
   const {def, confine} = require('./sesshim.es6');
+  const {indent} = require('./indent.es6');
   const sc = require('./scanner.es6');
 
   function simple(prefix, list) {
     if (list.length === 0) { return ['empty']; }
     if (list.length === 1) { return list[0]; }
     return [prefix, ...list];
-  }
-
-  function indent(str, newnewline) {
-    return str.replace(/\n/g, newnewline);
   }
 
   function compile(sexp) {
@@ -67,8 +64,8 @@ module.exports = (function(){
         // non-EOF token parsed), and the semantic value. On failure
         // to parse, the semantic value will be FAIL.
         const name = rules[0][1];
-        return (
-`(function(${paramSrcs.join(', ')}) {
+        return indent`
+(function(${paramSrcs.join(', ')}) {
   return BaseParser => class extends BaseParser {
     constructor(template, tokenTypeList=[]) {
       super(template, ${tokenTypeListSrc}.concat(tokenTypeList));
@@ -80,21 +77,19 @@ module.exports = (function(){
       }
       return pair[1];
     }
-    ${indent(rulesSrc,`
-    `)}
+    ${rulesSrc}
   }
 })
-`);
+`;
       },
       def(name, body) {
         const bodySrc = peval(body);
-        return (
-`rule_${name}(pos) {
+        return indent`
+rule_${name}(pos) {
   ${takeVarsSrc()}
-  ${indent(bodySrc,`
-  `)}
+  ${bodySrc}
   return [pos, value];
-}`);
+}`;
       },
       empty() {
         return `value = [];`;
@@ -104,43 +99,41 @@ module.exports = (function(){
       },
       or(...choices) {
         const labelSrc = nextLabel('or');
-        const choicesSrc = choices.map(peval).map(cSrc =>
-`${cSrc}
+        const choicesSrc = choices.map(peval).map(cSrc => indent`
+${cSrc}
 if (value !== FAIL) break ${labelSrc};`).join('\n');
 
-        return (
-`${labelSrc}: {
-  ${indent(choicesSrc,`
-  `)}
-}`);
+        return indent`
+${labelSrc}: {
+  ${choicesSrc}
+}`;
       },
       seq(...terms) {
         const posSrc = nextVar('pos');
         const labelSrc = nextLabel('seq');
         const sSrc = nextVar('s');
         const vSrc = nextVar('v');
-        const termsSrc = terms.map(peval).map(termSrc =>
-`${termSrc}
+        const termsSrc = terms.map(peval).map(termSrc => indent`
+${termSrc}
 if (value === FAIL) break ${labelSrc};
 ${sSrc}.push(value);`).join('\n');
 
-        return (
-`${sSrc} = [];
+        return indent`
+${sSrc} = [];
 ${vSrc} = FAIL;
 ${posSrc} = pos;
 ${labelSrc}: {
-  ${indent(termsSrc,`
-  `)}
+  ${termsSrc}
   ${vSrc} = ${sSrc};
 }
-if ((value = ${vSrc}) === FAIL) pos = ${posSrc};`);
+if ((value = ${vSrc}) === FAIL) pos = ${posSrc};`;
       },
       act(terms, hole) {
         numSubs = Math.max(numSubs, hole + 1);
         const termsSrc = vtable.seq(...terms);
-        return (
-`${termsSrc}
-if (value !== FAIL) value = act_${hole}(...value);`);
+        return indent`
+${termsSrc}
+if (value !== FAIL) value = act_${hole}(...value);`;
       },
       '**'(patt, sep) {
         // for backtracking
@@ -150,32 +143,30 @@ if (value !== FAIL) value = act_${hole}(...value);`);
         const sSrc = nextVar('s');
         const pattSrc = peval(patt);
         const sepSrc = peval(sep);
-        return (
-// after first iteration, backtrack to before the separator
-`${sSrc} = [];
+        // after first iteration, backtrack to before the separator
+        return indent`
+${sSrc} = [];
 ${posSrc} = pos;
 while (true) {
   ${startSrc} = pos;
-  ${indent(pattSrc,`
-  `)}
+  ${pattSrc}
   if (value === FAIL) {
     pos = ${posSrc};
     break;
   }
   ${sSrc}.push(value);
   ${posSrc} = pos;
-  ${indent(sepSrc,`
-  `)}
+  ${sepSrc}
   if (value === FAIL) break;
   if (pos === ${startSrc}) break;
 }
-value = ${sSrc};`);
+value = ${sSrc};`;
       },
       '++'(patt, sep) {
         const starSrc = vtable['**'](patt, sep);
-        return (
-`${starSrc}
-if (value.length === 0) value = FAIL;`);
+        return indent`
+${starSrc}
+if (value.length === 0) value = FAIL;`;
       },
       '?'(patt) {
         return vtable['**'](patt, ['fail']);
@@ -254,7 +245,7 @@ if (value.length === 0) value = FAIL;`);
   function metaCompile(baseRules, _=void 0) {
     const baseAST = ['bnf', ...baseRules];
     const parserTraitMakerSrc = compile(baseAST);
-//console.log('\n\n' + parserTraitMakerSrc + '\n\n');
+// console.log('\n\n' + parserTraitMakerSrc + '\n\n');
     const makeParserTrait = confine(parserTraitMakerSrc, {
       Scanner: sc.Scanner,
       FAIL: sc.FAIL
