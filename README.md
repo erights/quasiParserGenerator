@@ -69,7 +69,7 @@ Quoted identifiers are keywords, and are therefore not recognized by the ```IDEN
 
 # Grammar Inheritance
 
-In addition to the rules it defines, our bnf grammar's own self description uses the identifiers ```EOF``` ,```IDENT```,  ```HOLE```, and ```STRING```. However, the only keyword it defines in ```"super"``` which it does not use. The reason is that this grammar inherits from ```bootbnf.defaultBaseGrammar```. The ```defaultBaseGrammar``` provides the rules for ```EOF``` ,```IDENT```,  ```HOLE```, and ```STRING```, as well as the expected rule for ```NUMBER```. The tags defined by the ```bnf``` tag also inherit from ```bootbnf.defaultBaseGrammar``` by default.
+In addition to the rules it defines, our bnf grammar's own self description uses the identifiers ```EOF``` ,```IDENT```,  ```HOLE```, and ```STRING```. However, the only keywords it defines are ```"super"``` and ```"this"```, which it does not use. The reason is that this grammar inherits from ```bootbnf.defaultBaseGrammar```. The ```defaultBaseGrammar``` provides the rules for ```EOF``` ,```IDENT```,  ```HOLE```, and ```STRING```, as well as the expected rule for ```NUMBER```. The tags defined by the ```bnf``` tag also inherit from ```bootbnf.defaultBaseGrammar``` by default.
 
 The ```bnf``` tag also has an ```extends``` method for specifying a base grammar explicitly. For example, test/testbnf.es6 defines a bnf grammar for JSON called ```QuasiJSON```. The relevant parts are
 
