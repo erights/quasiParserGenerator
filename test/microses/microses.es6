@@ -144,6 +144,7 @@ module.exports = (function() {
     arg ::=
       "..." expr                                           ${(_,e) => ['spread',e]}
     / expr;
+
     param ::=
       "..." pattern                                        ${(_,p) => ['rest',p]}
     / IDENT "=" expr                                       ${(id,_,e) => ['optional',id,e]}
@@ -154,6 +155,7 @@ module.exports = (function() {
       "..." expr                                           ${(_,e) => ['spreadObj',e]}
     / key ":" expr                                         ${(k,_,e) => ['prop',k,e]}
     / IDENT                                                ${id => ['prop',id,id]};
+
     propParam ::=
       "..." pattern                                        ${(_,p) => ['restObj',p]}
     / key ":" pattern                                      ${(k,_,p) => ['matchProp',k,p]}
@@ -170,7 +172,7 @@ module.exports = (function() {
 
     later ::= NO_NEWLINE "!";
 
-    # No "new" or "super" or MetaProperty Without "new" we don't need
+    # No "new", "super", or MetaProperty. Without "new" we don't need
     # separate MemberExpr and CallExpr productions.
     postExpr ::= primaryExpr postOp*                       ${binary};
     postOp ::=
@@ -194,7 +196,7 @@ module.exports = (function() {
 
     # No bitwise operators, "instanceof", or "in".  Unlike ES6, none
     # of the relational operators associate. To help readers, mixing
-    # these always requires explicit parens.
+    # relational operators always requires explicit parens.
     multExpr ::= preExpr (("*" / "/" / "%") preExpr)*      ${binary};
     addExpr ::= multExpr (("+" / "-") multExpr)*           ${binary};
     relExpr ::= addExpr (relOp addExpr)?                   ${binary};
