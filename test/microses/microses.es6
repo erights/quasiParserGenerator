@@ -97,17 +97,23 @@ module.exports = (function() {
     QUASI_TAIL ::= ${() => FAIL};
 
     RESERVED_WORD ::= 
-      KEYWORD / FUTURE_RESERVED_WORD
-    / "null" / "false" / "true";
+      KEYWORD / ES6_ONLY_KEYWORD / FUTURE_RESERVED_WORD;
 
     KEYWORD ::=
-      "break" / "case" / "catch" / "class" / "const"
-    / "continue" / "debugger" / "default" / "delete"
-    / "do" / "else" / "export" / "extends" / "finally"
-    / "for" / "function" / "if" / "import"
-    / "in" / "instanceof" / "new" / "return" / "super"
-    / "switch" / "this" / "throw" / "try"
-    / "typeof" / "var" / "void" / "while" / "with" / "yield";
+      "false" / "true"
+    / "break" / "case" / "catch" / "const"
+    / "debugger" / "default" / "delete"
+    / "else" / "export" / "finally"
+    / "for" / "if" / "import"
+    / "return" / "switch" / "throw" / "try"
+    / "typeof" / "void" / "while";
+
+    # We enumerate these anyway, in order to exclude them from the
+    # IDENT token.
+    ES6_ONLY_KEYWORD ::=
+      "null" / "class" / "continue" / "do" / "extends"
+    / "function" / "in" / "instanceof" / "new" / "super"
+    / "this" / "var" / "with" / "yield";
 
     FUTURE_RESERVED_WORD ::=
       "enum" / "await"
@@ -116,9 +122,9 @@ module.exports = (function() {
 
     # Microses primaryExpr does not include "this", ClassExpression, 
     # GeneratorExpression, or RegularExpressionLiteral.
-    # No "function" functions.
+    # No "null". No "function" functions.
     primaryExpr ::=
-      (NUMBER / STRING / "null" / "true" / "false")        ${n => ['data',JSON.parse(n)]}
+      (NUMBER / STRING / "true" / "false")                 ${n => ['data',JSON.parse(n)]}
     / "[" arg ** "," "]"                                   ${(_,es,_2) => ['array',es]}
     / "{" prop ** "," "}"                                  ${(_,ps,_2) => ['object',ps]}
     / quasiExpr
