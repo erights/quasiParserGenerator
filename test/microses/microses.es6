@@ -25,7 +25,7 @@ module.exports = (function() {
   const {FAIL, Packratter} = require('../../src/scanner.es6');
   // Packratter._debug = true;
 
-  // Whereas SES is a maximal ocap-secure subset of ES6 (EmaScript
+  // Whereas SES is a maximal ocap-secure subset of ES6 (EcmaScript
   // 2015), microses is a minimal "better parts"
   // (http://www.infoq.com/presentations/efficient-programming-language-es6)
   // subset of SES-strict. SES is a semantic, not a syntactic, subset
