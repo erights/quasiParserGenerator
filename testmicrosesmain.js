@@ -12,7 +12,12 @@ module.exports = (function(){
 
   var sesshim = require('./src/sesshim.es6');
   var def = sesshim.def;
-  require('./test/microses.es6');
+  var microsesMod = require('./test/microses/microses.es6');
+  var microses = microsesMod.microses;
+
+  console.log('----------');
+  const ast = microses`2+3;`;
+  console.log(JSON.stringify(ast));
 
   return def({});
 }());

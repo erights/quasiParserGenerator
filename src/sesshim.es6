@@ -48,7 +48,7 @@ module.exports = (function(){
    *     <tt>undefined</tt>.
    * </ul>
    * When sesshim.es6 is enhanced to use SES if present, this confine
-   * should wrap SES's confine rather than export it directly, it
+   * should wrap SES's confine rather than export it directly, in
    * order to continue to support ES6 expressions.
    */
   function confine(exprSrc, env) {
@@ -58,7 +58,7 @@ module.exports = (function(){
     // errors within exprSrc are accurate. Column numbers on the first
     // line won't be, but will on following lines.
     let closedFuncSrc =
-`(function(${names.join(',')}) { "use strict"; return ${exprSrc};
+`(function(${names.join(',')}) { "use strict"; return (${exprSrc});
 })
 //# sourceURL=data:${encodeURIComponent(exprSrc)}
 `;
