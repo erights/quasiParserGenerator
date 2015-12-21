@@ -7,8 +7,7 @@ module.exports = (function(){
   const {def} = require('./sesshim.es6');
   const {FAIL, EOF,
     SPACE_RE, NUMBER_RE, STRING_RE, IDENT_RE,
-    LINE_COMMENT_RE, stickyRE,
-    Pos, Packratter} = require('./scanner.es6');
+    LINE_COMMENT_RE, stickyRE,Packratter} = require('./scanner.es6');
   const {quasifyParser, bnf} = require('./bootbnf.es6');
 
   /**

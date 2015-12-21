@@ -7,8 +7,7 @@
 module.exports = (function(){
   "use strict";
 
-  require('babel');
-  require('babel/register');
+  require('babel-register')({ presets: [ 'es2015' ] });
 
   var sesshim = require('./src/sesshim.es6');
   var def = sesshim.def;
@@ -16,7 +15,7 @@ module.exports = (function(){
   var microses = microsesMod.microses;
 
   console.log('----------');
-  const ast = microses`2+3;`;
+  var ast = microses`2+3;`;
   console.log(JSON.stringify(ast));
 
   return def({});

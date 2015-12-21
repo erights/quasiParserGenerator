@@ -20,7 +20,7 @@
 module.exports = (function(){
   "use strict";
 
-  const to5 = require('babel');
+  const to5 = require('babel-core');
 
   /**
    * The faux version of SES's <tt>def</tt> is currently just a
@@ -62,7 +62,7 @@ module.exports = (function(){
 })
 //# sourceURL=data:${encodeURIComponent(exprSrc)}
 `;
-    closedFuncSrc = to5.transform(closedFuncSrc).code;
+    closedFuncSrc = to5.transform(closedFuncSrc, { presets: ['es2015'] }).code;
     const closedFunc = (1,eval)(closedFuncSrc);
     return closedFunc(...names.map(n => env[n]));
   }
