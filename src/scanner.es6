@@ -3,6 +3,9 @@
 
 module.exports = (function(){
   "use strict";
+  
+  // Needed to support RegExp.prototype.flags
+  require("babel-polyfill");
 
   const {def} = require('./sesshim.es6');
   const {re} = require('./qregexp.es6');

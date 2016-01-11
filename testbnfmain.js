@@ -7,8 +7,7 @@
 module.exports = (function(){
   "use strict";
 
-  require('babel');
-  require('babel/register');
+  require('babel-register')({ presets: [ 'es2015' ] });
 
   var sesshim = require('./src/sesshim.es6');
   var def = sesshim.def;
