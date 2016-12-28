@@ -53,7 +53,7 @@ The grammar for our bnf language, extracted from src/bootbnf.es6, expressed in i
       / prim;
       prim ::=
         "super" "." IDENT            ${(sup,_2,id) => [sup, id]}
-      / "this" "." HOLE              ${(_,_2,hole) => ['apply', hole]
+      / "this" "." HOLE              ${(_,_2,hole) => ['apply', hole]}
       / IDENT / STRING
       / "(" body ")"                 ${(_,b,_2) => b};
     `
