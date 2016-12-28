@@ -96,10 +96,10 @@ module.exports = (function() {
     QUASI_MID ::= ${() => FAIL};
     QUASI_TAIL ::= ${() => FAIL};
 
-    # Exclude "arguments" from IDENT in microses.
+    # Exclude "arguments" and "eval" from IDENT in microses.
     RESERVED_WORD ::= 
       KEYWORD / ES6_ONLY_KEYWORD / FUTURE_RESERVED_WORD
-    / "arguments";
+    / "arguments" / "eval";
 
     KEYWORD ::=
       "false" / "true"
