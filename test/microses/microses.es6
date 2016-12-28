@@ -219,7 +219,7 @@ module.exports = (function() {
     fieldExpr ::=
       primaryExpr "." IDENT                                ${(pe,_,id) => ['get',pe,id]}
     / primaryExpr "[" expr "]"                             ${(pe,_,e,_2) => ['index',pe,e]}
-    / primaryExpr later IDENT                              ${(pe,_,_2,id) => ['getLater',pe,id]}
+    / primaryExpr later IDENT                              ${(pe,_,id) => ['getLater',pe,id]}
     / primaryExpr later "[" expr "]"                       ${(pe,_,_2,e,_3) => ['indexLater',pe,e]};
 
     # No bitwise operators
