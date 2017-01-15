@@ -73,13 +73,23 @@ module.exports = (function() {
   // Ouside the lexical grammar, other differences from
   // http://www.ecma-international.org/ecma-262/6.0/#sec-grammar-summary
   // are noted as comments within the grammar below.
-  // That page uses a cover grammar do avoid unbounded
+  // That page uses a cover grammar to avoid unbounded
   // lookahead. Because the grammar here is defined using a PEG
   // (parsing expression grammar) which supports unbounded lookahead,
   // we avoid the need for a cover grammar.
 
   // Microses array literals exclude elision (i.e., nothing between
   // commas). 
+
+  // Microses omits "arguments" and "eval".
+  // EcmaScript/strict already limits "arguments" and "eval"
+  // to the point that they are effectively keywords.
+  // Microses does include "..." both as rest and spread
+  // which provides the useful functionality of "arguments"
+  // with less confusion.
+  // The EcmaScript/strict "eval" can be used for both
+  // direct and indirect eval. Microses has no direct eval
+  // and can use other evaluator APIs to make up the difference.
 
   // Beyond subsetting ES6, this grammar also includes the infix "!"
   // (eventually) operator from
@@ -102,7 +112,7 @@ module.exports = (function() {
     / "arguments" / "eval";
 
     KEYWORD ::=
-      "false" / "true"
+      "null" / "false" / "true"
     / "break" / "case" / "catch" / "const"
     / "debugger" / "default" / "delete"
     / "else" / "export" / "finally"
@@ -110,10 +120,11 @@ module.exports = (function() {
     / "return" / "switch" / "throw" / "try"
     / "typeof" / "void" / "while";
 
+    # Microses omits these ES6 keywords.
     # We enumerate these anyway, in order to exclude them from the
     # IDENT token.
     ES6_ONLY_KEYWORD ::=
-      "null" / "class" / "continue" / "do" / "extends"
+      "class" / "continue" / "do" / "extends"
     / "function" / "in" / "instanceof" / "new" / "super"
     / "this" / "var" / "with" / "yield";
 
@@ -122,23 +133,25 @@ module.exports = (function() {
     / "implements" / "interface" / "package"
     / "private" / "protected" / "public";
 
+    dataLiteral ::= NUMBER / STRING / "null" / "true" / "false";
+
     # Microses primaryExpr does not include "this", ClassExpression, 
     # GeneratorExpression, or RegularExpressionLiteral.
-    # No "null". No "function" functions.
+    # No "function" functions.
     primaryExpr ::=
-      (NUMBER / STRING / "true" / "false")                 ${n => ['data',JSON.parse(n)]}
+      IDENT
+    / dataLiteral                                          ${n => ['data',JSON.parse(n)]}
     / "[" arg ** "," "]"                                   ${(_,es,_2) => ['array',es]}
     / "{" prop ** "," "}"                                  ${(_,ps,_2) => ['object',ps]}
     / quasiExpr
     / "(" expr ")"                                         ${(_,e,_2) => e}
-    / IDENT
     / HOLE                                                 ${h => ['exprHole',h]};
 
     pattern ::=
-      (NUMBER / STRING / "true" / "false")                 ${n => ['matchData',JSON.parse(n)]}
+      IDENT
+    / dataLiteral                                          ${n => ['matchData',JSON.parse(n)]}
     / "[" param ** "," "]"                                 ${(_,ps,_2) => ['matchArray',ps]}
     / "{" propParam ** "," "}"                             ${(_,ps,_2) => ['matchObj',ps]}
-    / IDENT
     / HOLE                                                 ${h => ['patternHole',h]};
 
     arg ::=
@@ -232,17 +245,18 @@ module.exports = (function() {
       IDENT                                                ${id => [id]}
     / "(" param ** "," ")"                                 ${(_,ps,_2) => ps};
 
-    # No "var", empty statement, "continue", "with", "do/while",
-    # "for/in", or labelled statement. None of the insane variations
-    # of "for". Only blocks are accepted for flow-of-control
-    # statements.
+    # No "var", empty statement, "continue", "with",
+    # "for/in", or labelled statement.
+    # None of the insane variations of "for". 
+    # Only blocks are accepted for flow-of-control statements.
     statement ::=
       block
     / "if" "(" expr ")" block "else" block                 ${(_,_2,c,_3,t,_4,e) => ['if',c,t,e]}
     / "if" "(" expr ")" block                              ${(_,_2,c,_3,t) => ['if',c,t]}
+    / "do" block "while" "(" expr ")" ";"                  ${(_,b,_2,_3,c,_4,_5) => ['doWhile',b,c]}
+    / "while" "(" expr ")" block                           ${(_,_2,c,_3,b) => ['while',c,b]}
     / "for" "(" declaration expr? ";" expr? ")" block      ${(_,_2,d,c,_3,i,_4,b) => ['for',d,c,i,b]}
     / "for" "(" declOp binding "of" expr ")" block         ${(_,_2,d,_3,e,_4,b) => ['forOf',d,e,b]}
-    / "while" "(" expr ")" block                           ${(_,_2,c,_3,b) => ['while',c,b]}
     / "try" block catcher finalizer                        ${(_,b,c,f) => ['try',b,c,f]}
     / "try" block finalizer                                ${(_,b,f) => ['try',b,f]}
     / "try" block catcher                                  ${(_,b,c) => ['try',b,c]}
