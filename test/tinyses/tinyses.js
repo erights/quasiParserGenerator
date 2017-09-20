@@ -189,18 +189,27 @@ module.exports = (function() {
     # No "new", "super", or MetaProperty. Without "new" we don't need
     # separate MemberExpr and CallExpr productions.
     postExpr ::= primaryExpr postOp*                       ${binary};
-    fieldOp ::=
-      "." IDENT_NAME                                       ${(_,id) => ['get',id]}
-    / "[" expr "]"                                         ${(_,e,_2) => ['index',e]}
-    / later IDENT_NAME                                     ${(_,id) => ['getLater',id]}
-    / later "[" expr "]"                                   ${(_,_2,e,_3) => ['indexLater',e]};
-
     postOp ::=
       fieldOp
     / "(" arg ** "," ")"                                   ${(_,args,_2) => ['call',args]}
     / quasiExpr                                            ${q => ['tag',q]}
     / later "(" arg ** "," ")"                             ${(_,_2,args,_3) => ['callLater',args]}
     / later quasiExpr                                      ${(_,q) => ['tagLater',q]};
+
+    fieldOp ::=
+      "." IDENT_NAME                                       ${(_,id) => ['get',id]}
+    / "[" expr "]"                                         ${(_,e,_2) => ['index',e]}
+    / later IDENT_NAME                                     ${(_,id) => ['getLater',id]}
+    / later "[" expr "]"                                   ${(_,_2,e,_3) => ['indexLater',e]};
+
+    # lValue is divided into IDENT and fieldExpr because tiny ses
+    # syntactically disallows "delete" IDENT.
+    # No pseudo-pattern lValues.
+    lValue ::=
+      IDENT                                                ${n => ['use',n]}
+    / fieldExpr;
+
+    fieldExpr ::= postExpr fieldOp                         ${(left,[op,right]) => [op,left,right]};
 
     preExpr ::=
       "delete" fieldExpr                                   ${(_,fe) => ['delete', fe]}
@@ -226,15 +235,6 @@ module.exports = (function() {
       lValue assignOp expr                                 ${(lv,op,rv) => [op,lv,rv]}
     / arrow
     / orElseExpr;
-
-    # lValue is divided into IDENT and fieldExpr because tiny ses
-    # syntactically disallows "delete" IDENT.
-    # No pseudo-pattern lValues.
-    lValue ::=
-      IDENT                                                ${n => ['use',n]}
-    / fieldExpr;
-
-    fieldExpr ::= postExpr fieldOp                         ${(left,[op,right]) => [op,left,right]};
 
     # No bitwise operators
     assignOp ::= "=" / "*=" / "/=" / "%=" / "+=" / "-=";

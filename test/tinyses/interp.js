@@ -1,4 +1,4 @@
-/*global module require*/
+/*global module require Q */
 
 module.exports = (function() {
   "use strict";
@@ -148,20 +148,41 @@ module.exports = (function() {
     quasi(...parts) {
       //xxx
     }
-    get(objExpr, id) { return this.i(objExpr)[id]; }
-    index(objExpr, indexExpr) { return this.i(objExpr)[this.i(indexExpr)]; }
-    call(fnExpr, args) { return this.i(fnExpr)(...this.all(args)); }
+    get(base, id) { return this.i(base)[id]; }
+    index(base, index) { return this.i(base)[this.i(index)]; }
+    getLater(base, id) { return Q(this.i(base)).get(id); }
+    indexLater(base, index) {
+      return Q(this.i(base)).get(this.i(index));
+    }
+
+    call(fnExpr, args) {
+      if (Array.isArray(fnExpr)) {
+        if (fnExpr[0] === 'getLater') {
+          return Q(this.i(fnExpr[1])).post(fnExpr[2],
+                                           ...this.all(args));
+        } else if (fnExpr[0] === 'indexLater') {
+          return Q(this.i(fnExpr[1])).post(this.i(fnExpr[2]),
+                                           ...this.all(args));
+        }
+      }
+      return this.i(fnExpr)(...this.all(args));
+    }
     tag(tagExpr, quasiAst) {
       //xxx
     }
-    // getLater, indexLater, callLater, tagLater
+    callLater(fnExpr, args) {
+      return Q(this.i(fnExpr)).fcall(...this.all(args));
+    }
+    // tagLater
 
     delete(fe) {
       return visit(fe, {
-        get(obj, id) { delete this.i(obj)[id]; },
-        index(obj, index) { delete this.i(obj)[this.i(index)]; },
-        getLater(obj, id) {},
-        indexLater(obj, index) {}
+        get(base, id) { return delete this.i(base)[id]; },
+        index(base, index) { return delete this.i(base)[this.i(index)]; },
+        getLater(base, id) { return Q(this.i(base)).delete(id); },
+        indexLater(base, index) {
+          return Q(this.i(base)).delete(this.i(index));
+        }
       });
     }
     void(e) { return void this.i(e); }
@@ -189,17 +210,55 @@ module.exports = (function() {
     '||'(e1,e2) { return this.i(e1) || this.i(e2); }
     '&&'(e1,e2) { return this.i(e1) && this.i(e2); }
 
-    assign(lv, updateFn) {
+    '='(lv, rv) {
       visit(lv, {
-        use(id) {},
-        get(objExpr, id) {},
-        index(objExpr, indexExpr) {},
-        getLater(objExpr, id) {},
-        indexLater(objExpr, indexExpr) {}
+        use(name) {
+          if (!(name in this.env)) {
+            throw new ReferenceError(`${name} not found`);
+          }
+          const old = this.env[name];
+          if (this.env[name] === uninitialized) {
+            throw new TypeError(`${name} not initialized`);
+          }
+          return this.env[name] = this.i(rv);
+        },
+        get(base, id) {
+          return this.i(base)[id] = this.i(rv);
+        },
+        index(base, index) {
+          return this.i(base)[this.i(index)] = this.i(rv);
+        },
+        getLater(base, id) {},
+        indexLater(base, index) {}
       });
     }
 
-    '='(lv,rv) { return this.assign(lv, _ => this.i(rv)); }
+    assign(lv, updateFn) {
+      visit(lv, {
+        use(name) {
+          if (!(name in this.env)) {
+            throw new ReferenceError(`${name} not found`);
+          }
+          const old = this.env[name];
+          if (this.env[name] === uninitialized) {
+            throw new TypeError(`${name} not initialized`);
+          }
+          return this.env[name] = updateFn(old);
+        },
+        get(base, id) {
+          const obj = this.i(base);
+          return obj[id] = updateFn(obj[id]);
+        },
+        index(base, index) {
+          const obj = this.i(base);
+          const id = this.i(index);
+          return obj[id] = updateFn(obj[id]);
+        },
+        getLater(base, id) {},
+        indexLater(base, index) {}
+      });
+    }
+
     '*='(lv,rv) { return this.assign(lv, o => o * this.i(rv)); }
     '/='(lv,rv) { return this.assign(lv, o => o / this.i(rv)); }
     '%='(lv,rv) { return this.assign(lv, o => o % this.i(rv)); }
