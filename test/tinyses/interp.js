@@ -169,11 +169,11 @@ module.exports = (function() {
       // weird typeof scope
       return typeof this.i(e);
     }
-    '+'(e1, ...es) {
-      return es.length ? this.i(e1) + this.i(es[0]) : +this.i(e1);
+    '+'(e1, e2=void 0) {
+      return e2 ? this.i(e1) + this.i(e2) : +this.i(e1);
     }
-    '-'(e1, ...es) {
-      return es.length ? this.i(e1) - this.i(es[0]) : -this.i(e1);
+    '-'(e1, e2=void 0) {
+      return e2 ? this.i(e1) - this.i(e2) : -this.i(e1);
     }
     '!'(e) { return !this.i(e); }
 
