@@ -150,25 +150,25 @@ module.exports = (function() {
     / "(" expr ")"                                         ${(_,e,_2) => e}
     / HOLE                                                 ${h => ['exprHole',h]};
 
+    arg ::=
+      "..." expr                                           ${(_,e) => ['spread',e]}
+    / expr;
+
+    # No method definition.
+    prop ::=
+      key ":" expr                                         ${(k,_,e) => ['prop',k,e]}
+    / IDENT                                                ${id => ['prop',id,['use',id]]};
+
     pattern ::=
       IDENT                                                ${n => ['def',n]}
     / "[" param ** "," "]"                                 ${(_,ps,_2) => ['matchArray',ps]}
     / "{" propParam ** "," "}"                             ${(_,ps,_2) => ['matchObj',ps]}
     / HOLE                                                 ${h => ['patternHole',h]};
 
-    arg ::=
-      "..." expr                                           ${(_,e) => ['spread',e]}
-    / expr;
-
     param ::=
       "..." pattern                                        ${(_,p) => ['rest',p]}
     / pattern "=" expr                                     ${(p,_,e) => ['optional',p,e]}
     / pattern;
-
-    # No method definition.
-    prop ::=
-      key ":" expr                                         ${(k,_,e) => ['prop',k,e]}
-    / IDENT                                                ${id => ['prop',id,['use',id]]};
 
     propParam ::=
       key ":" pattern "=" expr                             ${(k,_,p,_2,e) => ['optionalProp',k,p,e]}
@@ -189,14 +189,16 @@ module.exports = (function() {
     # No "new", "super", or MetaProperty. Without "new" we don't need
     # separate MemberExpr and CallExpr productions.
     postExpr ::= primaryExpr postOp*                       ${binary};
-    postOp ::=
+    fieldOp ::=
       "." IDENT_NAME                                       ${(_,id) => ['get',id]}
     / "[" expr "]"                                         ${(_,e,_2) => ['index',e]}
+    / later IDENT_NAME                                     ${(_,id) => ['getLater',id]}
+    / later "[" expr "]"                                   ${(_,_2,e,_3) => ['indexLater',e]};
+
+    postOp ::=
+      fieldOp
     / "(" arg ** "," ")"                                   ${(_,args,_2) => ['call',args]}
     / quasiExpr                                            ${q => ['tag',q]}
-
-    / later IDENT_NAME                                     ${(_,id) => ['getLater',id]}
-    / later "[" expr "]"                                   ${(_,_2,e,_3) => ['indexLater',e]}
     / later "(" arg ** "," ")"                             ${(_,_2,args,_3) => ['callLater',args]}
     / later quasiExpr                                      ${(_,q) => ['tagLater',q]};
 
@@ -232,11 +234,7 @@ module.exports = (function() {
       IDENT                                                ${n => ['use',n]}
     / fieldExpr;
 
-    fieldExpr ::=
-      primaryExpr "." IDENT_NAME                           ${(pe,_,id) => ['get',pe,id]}
-    / primaryExpr "[" expr "]"                             ${(pe,_,e,_2) => ['index',pe,e]}
-    / primaryExpr later IDENT_NAME                         ${(pe,_,id) => ['getLater',pe,id]}
-    / primaryExpr later "[" expr "]"                       ${(pe,_,_2,e,_3) => ['indexLater',pe,e]};
+    fieldExpr ::= postExpr fieldOp                         ${(left,[op,right]) => [op,left,right]};
 
     # No bitwise operators
     assignOp ::= "=" / "*=" / "/=" / "%=" / "+=" / "-=";
