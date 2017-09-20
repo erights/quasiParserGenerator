@@ -22,7 +22,7 @@ module.exports = (function() {
       assert('defaultVisit' in visitor, `unrecognized ast kind ${kind}`);
       return visitor.defaultVisit(ast);
     }
-    return visitor[kind](...body);
+    return visitor[kind](ast, ...body);
   }
 
   function interpKey(ast, env) {
@@ -44,20 +44,20 @@ module.exports = (function() {
     m(ast, specimen) {
       visit(ast, this)(specimen);
     }
-    def(name) {
+    def(_, name) {
       assert(this.env[name] !== uninitialized, `${name} not uninitialized`);
       return specimen => this.env[name] = specimen;
     }
-    matchArray(params) {
+    matchAll(params) {
       const patternVisitor = this;
       return specimen => {
         params.forEach((param, i) => {
           const paramVisitor = def({
             __proto__: patternVisitor,
-            rest(patt) {
+            rest(_, patt) {
               return _ => visit(patt, patternVisitor)(specimen.slice(i));
             },
-            optional(patt,expr) {
+            optional(_, patt,expr) {
               const val = i < specimen.length ?
                   specimen[i] : interp(expr, patternVisitor.env);
               return _ => visit(patt, patternVisitor)(val);
@@ -67,16 +67,19 @@ module.exports = (function() {
         });
       };
     }
-    matchObj(propParams) {
+    matchArray(_, params) {
+      return this.matchAll(params);
+    }
+    matchObj(_, propParams) {
       const patternVisitor = this;
       return specimen => {
         propParams.forEach(propParam => {
           const propParamVisitor = def({
-            matchProp(key, patt) {
+            matchProp(_, key, patt) {
               const k = interpKey(key, patternVisitor.env);
               visit(patt, patternVisitor)(specimen[k]);
             },
-            optionalProp(key, patt, expr) {
+            optionalProp(_, key, patt, expr) {
               const k = interpKey(key, patternVisitor.env);
               const val = k in specimen ?
                     specimen[k] : interp(expr, patternVisitor.env);
@@ -111,18 +114,18 @@ module.exports = (function() {
       });
       return result;
     }
-    nest(decls) {
+    nest(_, decls) {
       const subEnv = Object.create(this.env);
       //xxx
       return new InterpVisitor(subEnv);
     }
-    script(stats) {
+    script(_, stats) {
       const nest = this.nest(stats);
       let result = void 0;
       stats.forEach(stat => (result = nest.i(stat)));
       return result;
     }
-    use(name) {
+    use(_, name) {
       if (!(name in this.env)) {
         throw new ReferenceError(`${name} not found`);
       }
@@ -132,30 +135,30 @@ module.exports = (function() {
       }
       return result;
     }
-    data(value) {
+    data(_, value) {
       return value;
     }
-    array(args) {
+    array(_, args) {
       return this.all(args);
     }
-    object(props) {
+    object(_, props) {
       const result = {};
       props.map(prop => visit(prop, {
-        prop(key,val) { result[this.i(key)] = this.i(val); }
+        prop(_, key,val) { result[this.i(key)] = this.i(val); }
       }));
       return result;
     }
-    quasi(...parts) {
+    quasi(_, ...parts) {
       //xxx
     }
-    get(base, id) { return this.i(base)[id]; }
-    index(base, index) { return this.i(base)[this.i(index)]; }
-    getLater(base, id) { return Q(this.i(base)).get(id); }
-    indexLater(base, index) {
+    get(_, base, id) { return this.i(base)[id]; }
+    index(_, base, index) { return this.i(base)[this.i(index)]; }
+    getLater(_, base, id) { return Q(this.i(base)).get(id); }
+    indexLater(_, base, index) {
       return Q(this.i(base)).get(this.i(index));
     }
 
-    call(fnExpr, args) {
+    call(_, fnExpr, args) {
       if (Array.isArray(fnExpr)) {
         if (fnExpr[0] === 'getLater') {
           return Q(this.i(fnExpr[1])).post(fnExpr[2],
@@ -167,52 +170,52 @@ module.exports = (function() {
       }
       return this.i(fnExpr)(...this.all(args));
     }
-    tag(tagExpr, quasiAst) {
+    tag(_, tagExpr, quasiAst) {
       //xxx
     }
-    callLater(fnExpr, args) {
+    callLater(_, fnExpr, args) {
       return Q(this.i(fnExpr)).fcall(...this.all(args));
     }
     // tagLater
 
-    delete(fe) {
+    delete(_, fe) {
       return visit(fe, {
-        get(base, id) { return delete this.i(base)[id]; },
-        index(base, index) { return delete this.i(base)[this.i(index)]; },
-        getLater(base, id) { return Q(this.i(base)).delete(id); },
-        indexLater(base, index) {
+        get(_, base, id) { return delete this.i(base)[id]; },
+        index(_, base, index) { return delete this.i(base)[this.i(index)]; },
+        getLater(_, base, id) { return Q(this.i(base)).delete(id); },
+        indexLater(_, base, index) {
           return Q(this.i(base)).delete(this.i(index));
         }
       });
     }
-    void(e) { return void this.i(e); }
-    typeof(e) {
+    void(_, e) { return void this.i(e); }
+    typeof(_, e) {
       // weird typeof scope
       return typeof this.i(e);
     }
-    '+'(e1, e2=void 0) {
+    '+'(_, e1, e2=void 0) {
       return e2 ? this.i(e1) + this.i(e2) : +this.i(e1);
     }
-    '-'(e1, e2=void 0) {
+    '-'(_, e1, e2=void 0) {
       return e2 ? this.i(e1) - this.i(e2) : -this.i(e1);
     }
-    '!'(e) { return !this.i(e); }
+    '!'(_, e) { return !this.i(e); }
 
-    '*'(e1,e2) { return this.i(e1) * this.i(e2); }
-    '/'(e1,e2) { return this.i(e1) / this.i(e2); }
-    '%'(e1,e2) { return this.i(e1) % this.i(e2); }
-    '<'(e1,e2) { return this.i(e1) < this.i(e2); }
-    '>'(e1,e2) { return this.i(e1) > this.i(e2); }
-    '<='(e1,e2) { return this.i(e1) <= this.i(e2); }
-    '>='(e1,e2) { return this.i(e1) >= this.i(e2); }
-    '==='(e1,e2) { return this.i(e1) === this.i(e2); }
-    '!=='(e1,e2) { return this.i(e1) !== this.i(e2); }
-    '||'(e1,e2) { return this.i(e1) || this.i(e2); }
-    '&&'(e1,e2) { return this.i(e1) && this.i(e2); }
+    '*'(_, e1,e2) { return this.i(e1) * this.i(e2); }
+    '/'(_, e1,e2) { return this.i(e1) / this.i(e2); }
+    '%'(_, e1,e2) { return this.i(e1) % this.i(e2); }
+    '<'(_, e1,e2) { return this.i(e1) < this.i(e2); }
+    '>'(_, e1,e2) { return this.i(e1) > this.i(e2); }
+    '<='(_, e1,e2) { return this.i(e1) <= this.i(e2); }
+    '>='(_, e1,e2) { return this.i(e1) >= this.i(e2); }
+    '==='(_, e1,e2) { return this.i(e1) === this.i(e2); }
+    '!=='(_, e1,e2) { return this.i(e1) !== this.i(e2); }
+    '||'(_, e1,e2) { return this.i(e1) || this.i(e2); }
+    '&&'(_, e1,e2) { return this.i(e1) && this.i(e2); }
 
-    '='(lv, rv) {
+    '='(_, lv, rv) {
       visit(lv, {
-        use(name) {
+        use(_, name) {
           if (!(name in this.env)) {
             throw new ReferenceError(`${name} not found`);
           }
@@ -222,20 +225,20 @@ module.exports = (function() {
           }
           return this.env[name] = this.i(rv);
         },
-        get(base, id) {
+        get(_, base, id) {
           return this.i(base)[id] = this.i(rv);
         },
-        index(base, index) {
+        index(_, base, index) {
           return this.i(base)[this.i(index)] = this.i(rv);
         },
-        getLater(base, id) {},
-        indexLater(base, index) {}
+        getLater(_, base, id) {},
+        indexLater(_, base, index) {}
       });
     }
 
-    assign(lv, updateFn) {
+    assign(_, lv, updateFn) {
       visit(lv, {
-        use(name) {
+        use(_, name) {
           if (!(name in this.env)) {
             throw new ReferenceError(`${name} not found`);
           }
@@ -245,43 +248,43 @@ module.exports = (function() {
           }
           return this.env[name] = updateFn(old);
         },
-        get(base, id) {
+        get(_, base, id) {
           const obj = this.i(base);
           return obj[id] = updateFn(obj[id]);
         },
-        index(base, index) {
+        index(_, base, index) {
           const obj = this.i(base);
           const key = this.i(index);
           return obj[key] = updateFn(obj[key]);
         },
-        getLater(base, id) {},
-        indexLater(base, index) {}
+        getLater(_, base, id) {},
+        indexLater(_, base, index) {}
       });
     }
 
-    '*='(lv,rv) { return this.assign(lv, o => o * this.i(rv)); }
-    '/='(lv,rv) { return this.assign(lv, o => o / this.i(rv)); }
-    '%='(lv,rv) { return this.assign(lv, o => o % this.i(rv)); }
-    '+='(lv,rv) { return this.assign(lv, o => o + this.i(rv)); }
-    '-='(lv,rv) { return this.assign(lv, o => o - this.i(rv)); }
+    '*='(_, lv,rv) { return this.assign(lv, o => o * this.i(rv)); }
+    '/='(_, lv,rv) { return this.assign(lv, o => o / this.i(rv)); }
+    '%='(_, lv,rv) { return this.assign(lv, o => o % this.i(rv)); }
+    '+='(_, lv,rv) { return this.assign(lv, o => o + this.i(rv)); }
+    '-='(_, lv,rv) { return this.assign(lv, o => o - this.i(rv)); }
 
     // The incoming side of refraction
-    arrow(ps,body) {
+    arrow(_, ps,body) {
       const nest = this.nest(['arrow', ps, body]);
       return (...rest) => {
-        new PatternVisitor(nest.env).matchArray(ps)(rest);
+        new PatternVisitor(nest.env).matchAll(ps)(rest);
         nest.i(body);
       };
     }
-    lambda(ps,expr) {
+    lambda(_, ps,expr) {
       const nest = this.nest(['arrow', ps, expr]);
       return (...rest) => {
-        new PatternVisitor(nest.env).matchArray(ps)(rest);
+        new PatternVisitor(nest.env).matchAll(ps)(rest);
         return nest.i(expr);
       };
     }
     
-    if(c,t,e=void 0) {
+    if(_, c,t,e=void 0) {
       if (this.i(c)) {
         return this.i(t);
       } else if (e) {
@@ -290,14 +293,14 @@ module.exports = (function() {
         return void 0;
       }
     }
-    for(d,c,i,b) {}
-    forOf(d,e,b) {}
-    while(c,b) {
+    for(_, d,c,i,b) {}
+    forOf(_, d,e,b) {}
+    while(_, c,b) {
       while (this.i(c)) { this.i(b); }
     }
-    try(b,x) {
+    try(_, b,x) {
       visit(x, {
-        catch(patt, body) {
+        catch(_, patt, body) {
           try {
             return this.i(b);
           } catch (err) {
@@ -306,7 +309,7 @@ module.exports = (function() {
             return nest.i(body);
           }
         },
-        finally(body) {
+        finally(_, body) {
           try {
             return this.i(b);
           } finally {
@@ -315,17 +318,17 @@ module.exports = (function() {
         }
       });
     }
-    switch(e,bs) {}
-    debugger() { debugger; }
+    switch(_, e,bs) {}
+    debugger(_) { debugger; }
 
-    return(e=void 0) {}
-    break(label=void 0) {}
-    throw(e) { throw this.i(e); }
+    return(_, e=void 0) {}
+    break(_, label=void 0) {}
+    throw(_, e) { throw this.i(e); }
 
-    const(decls) {}
-    let(decls) {}
+    const(_, decls) {}
+    let(_, decls) {}
     
-    block(stats) {
+    block(_, stats) {
       const nest = this.nest(stats);
       let result = void 0;
       stats.forEach(stat => (result = nest.i(stat)));
