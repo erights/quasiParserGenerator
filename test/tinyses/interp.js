@@ -44,15 +44,18 @@ module.exports = (function() {
       return specimen => this.env[name] = specimen;
     }
     matchArray(params) {
+      const matchVisitor = this;
       return specimen => {
         params.forEach((param, i) => {
           const paramVisitor = def({
             __proto__: this,
             rest(patt) {
-              //xxx
+              return _ => visit(patt, matchVisitor)(specimen.slice(i));
             },
-            optional(id,expr) {
-              //xxx
+            optional(patt,expr) {
+              const val = i < specimen.length ?
+                specimen[i] : inter(expr, matchVisitor.env);
+              return _ => visit(patt, matchVisitor)(val);
             }
           });
           visit(param, paramVisitor)(specimen[i]);
@@ -133,9 +136,9 @@ module.exports = (function() {
     }
     // getLater, indexLater, callLater, tagLater
     void(e) { return void this.i(e); }
-    typeof(e) { 
+    typeof(e) {
       // weird typeof scope
-      return typeof this.i(e); 
+      return typeof this.i(e);
     }
     '+'(e) { return +this.i(e); }
     '-'(e) { return -this.i(e); }
@@ -150,7 +153,7 @@ module.exports = (function() {
       });
     }
     '+'(e1,e2) { return this.i(e1) + this.i(e2); }
-    
+
     '='(lv,rv) { return this.assign(lv, _ => this.i(rv)); }
     '=+'(lv,rv) { return this.assign(lv, o => o + this.i(rv)); }
 
