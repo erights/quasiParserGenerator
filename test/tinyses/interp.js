@@ -7,21 +7,20 @@ module.exports = (function() {
 
   class Panic extends Error {}
 
+  function assert(flag, str) {
+    if (!flag) { throw new Panic(str); }
+  }
+
   const uninitialized = def({});
 
   function visit(ast, visitor) {
-    if (!Array.isArray(ast)) {
-      throw new Panic(`unrecognized: ast ${typeof ast}`);
-    }
-    if (ast.length === 0 || Array.isArray(ast[0])) {
-      throw new Panic(`ast list mistaken for ast ${typeof ast}`);
-    }
+    assert(Array.isArray(ast), `unrecognized: ast ${typeof ast}`);
+    assert(ast.length >= 1 && typeof ast[0] === 'string',
+           `ast list mistaken for ast ${typeof ast}`);
     const [kind, ...body] = ast;
     if (!(kind in visitor)) {
-      if ('defaultVisit' in visitor) {
-        return visitor.defaultVisit(ast);
-      }
-      throw new Panic(`unrecognized ast kind ${kind}`);
+      assert('defaultVisit' in visitor, `unrecognized ast kind ${kind}`);
+      return visitor.defaultVisit(ast);
     }
     return visitor[kind](...body);
   }
