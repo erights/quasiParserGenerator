@@ -7,15 +7,13 @@
 module.exports = (function(){
   "use strict";
 
-  require('babel-register')({ presets: [ 'es2015' ] });
-
-  var sesshim = require('./src/sesshim.es6');
+  var sesshim = require('./src/sesshim.js');
   var def = sesshim.def;
-  var microsesMod = require('./test/microses/microses.es6');
-  var microses = microsesMod.microses;
+  var tinysesMod = require('./test/tinyses/tinyses.js');
+  var tinyses = tinysesMod.tinyses;
 
   console.log('----------');
-  var ast = microses`2+3;`;
+  var ast = tinyses`2+3;`;
   console.log(JSON.stringify(ast));
 
   return def({});

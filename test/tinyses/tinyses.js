@@ -4,8 +4,8 @@
 module.exports = (function() {
   "use strict";
 
-  const {def} = require('../../src/sesshim.es6');
-  const {bnf} = require('../../src/bootbnf.es6');
+  const {def} = require('../../src/sesshim.js');
+  const {bnf} = require('../../src/bootbnf.js');
 
   const binary = (left,rights) => rights.reduce((prev,[op,right]) => [op,prev,right], left);
 
@@ -22,42 +22,42 @@ module.exports = (function() {
     return result;
   };
 
-  const {FAIL, Packratter} = require('../../src/scanner.es6');
+  const {FAIL, Packratter} = require('../../src/scanner.js');
   // Packratter._debug = true;
 
   // Whereas SES is a maximal ocap-secure subset of ES6 (EcmaScript
-  // 2015), microses is a minimal "better parts"
+  // 2015), tiny ses is a minimal "better parts"
   // (http://www.infoq.com/presentations/efficient-programming-language-es6)
   // subset of SES-strict. SES is a semantic, not a syntactic, subset
-  // of ES6. Microses is mostly defined as a syntactic subset of
-  // SES-strict. The following microses grammar is based on
+  // of ES6. Tiny Ses is mostly defined as a syntactic subset of
+  // SES-strict. The following tiny ses grammar is based on
   // http://www.ecma-international.org/ecma-262/6.0/#sec-grammar-summary
   // Unlike that page, lexical productions are named in all upper
-  // case. The intention is that microses be a true subset of SES in
-  // the sense that every valid microses program is a valid SES
+  // case. The intention is that tiny ses be a true subset of SES in
+  // the sense that every valid tiny ses program is a valid SES
   // program of the same meaning.
 
-  // Unlike ES6 and SES, microses has no semicolon insertion, and so
-  // does not need a parser able to handle that. However, microses
+  // Unlike ES6 and SES, tiny ses has no semicolon insertion, and so
+  // does not need a parser able to handle that. However, tiny ses
   // must impose the NO_NEWLINE constraints from ES6, so that every
-  // non-rejected microses program is accepted as the same SES
+  // non-rejected tiny ses program is accepted as the same SES
   // program. NO_NEWLINE is a lexical-level placeholder that must
   // never consume anything. It should fail if the whitespace to skip
   // over contains a newline. TODO: Currently this placeholder always
   // succeeds.
 
-  // Microses excludes the RegularExpressionLiteral, instead including
+  // Tiny Ses excludes the RegularExpressionLiteral, instead including
   // the RegExp.make https://github.com/mikesamuel/regexp-make-js
   // template string tag. By omitting this and automatic semicolon
   // insertion, our lexical grammar avoids the context dependence that
   // plague JavaScript lexers.
 
-  // In microses, all reserved words are unconditionally reserved. By
+  // In tiny ses, all reserved words are unconditionally reserved. By
   // contrast, in ES6 and SES, "yield", "await", "implements", etc are
   // conditionally reserved. Thus we avoid the need for parameterized
   // lexical-level productions.
 
-  // Microses excludes both the "in" expression and the for/in loop,
+  // Tiny Ses excludes both the "in" expression and the for/in loop,
   // and thus avoid the need for parameterized parser-level
   // productions.
 
@@ -78,24 +78,24 @@ module.exports = (function() {
   // (parsing expression grammar) which supports unbounded lookahead,
   // we avoid the need for a cover grammar.
 
-  // Microses array literals exclude elision (i.e., nothing between
+  // Tiny Ses array literals exclude elision (i.e., nothing between
   // commas). 
 
-  // Microses omits "arguments" and "eval".
+  // Tiny Ses omits "arguments" and "eval".
   // EcmaScript/strict already limits "arguments" and "eval"
   // to the point that they are effectively keywords.
-  // Microses does include "..." both as rest and spread
+  // Tiny Ses does include "..." both as rest and spread
   // which provides the useful functionality of "arguments"
   // with less confusion.
   // The EcmaScript/strict "eval" can be used for both
-  // direct and indirect eval. Microses has no direct eval
+  // direct and indirect eval. Tiny Ses has no direct eval
   // and can use other evaluator APIs to make up the difference.
 
   // Beyond subsetting ES6, this grammar also includes the infix "!"
   // (eventually) operator from
   // http://research.google.com/pubs/pub40673.html
 
-  const microses = bnf`
+  const tinyses = bnf`
     # TODO: module syntax
     start ::= body EOF                                     ${(b,_) => (..._) => ['script', b]};
 
@@ -106,7 +106,7 @@ module.exports = (function() {
     QUASI_MID ::= ${() => FAIL};
     QUASI_TAIL ::= ${() => FAIL};
 
-    # Exclude "arguments" and "eval" from IDENT in microses.
+    # Exclude "arguments" and "eval" from IDENT in tiny ses.
     RESERVED_WORD ::= 
       KEYWORD / ES6_ONLY_KEYWORD / FUTURE_RESERVED_WORD
     / "arguments" / "eval";
@@ -120,7 +120,7 @@ module.exports = (function() {
     / "return" / "switch" / "throw" / "try"
     / "typeof" / "void" / "while";
 
-    # Microses omits these ES6 keywords.
+    # Tiny Ses omits these ES6 keywords.
     # We enumerate these anyway, in order to exclude them from the
     # IDENT token.
     ES6_ONLY_KEYWORD ::=
@@ -135,7 +135,7 @@ module.exports = (function() {
 
     dataLiteral ::= NUMBER / STRING / "null" / "true" / "false";
 
-    # Microses primaryExpr does not include "this", ClassExpression, 
+    # Tiny Ses primaryExpr does not include "this", ClassExpression, 
     # GeneratorExpression, or RegularExpressionLiteral.
     # No "function" functions.
     primaryExpr ::=
@@ -224,7 +224,7 @@ module.exports = (function() {
     / arrow
     / orElseExpr;
 
-    # lValue is divided into IDENT and fieldExpr because microses
+    # lValue is divided into IDENT and fieldExpr because tiny ses
     # syntactically disallows "delete" IDENT.
     # No pseudo-pattern lValues.
     lValue ::= IDENT / fieldExpr;
@@ -291,5 +291,5 @@ module.exports = (function() {
     body ::= (statement / declaration)*;
   `;
 
-  return def({microses});
+  return def({tinyses});
 }());

@@ -4,9 +4,9 @@
 module.exports = (function(){
   "use strict";
 
-  const {def, confine} = require('./sesshim.es6');
-  const {indent} = require('./indent.es6');
-  const sc = require('./scanner.es6');
+  const {def, confine} = require('./sesshim.js');
+  const {indent} = require('./indent.js');
+  const sc = require('./scanner.js');
 
   function simple(prefix, list) {
     if (list.length === 0) { return ['empty']; }

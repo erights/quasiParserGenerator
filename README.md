@@ -4,10 +4,10 @@ This project owes a huge debt to OMeta, which I repeatedly turned to as question
 
 # A Template String Tag Generator
 
-The input to our parser generator is expressed as a bnf template string, and the result is a template string tag for parsing template strings expressed in the grammar described by that bnf. The name of a template string tag usually names the language in which the template is written, which in our case is ```bnf.``` An example extracted from test/testbnf.es6:
+The input to our parser generator is expressed as a bnf template string, and the result is a template string tag for parsing template strings expressed in the grammar described by that bnf. The name of a template string tag usually names the language in which the template is written, which in our case is ```bnf.``` An example extracted from test/testbnf.js:
 
 ```javascript
-var bootbnf = require('../src/bootbnf.es6');
+var bootbnf = require('../src/bootbnf.js');
 var bnf = bootbnf.bnf;
 
 var arith = bnf`
@@ -37,7 +37,7 @@ In the above ```arith``` grammar, each action returns such an n-ary function. Th
 
 The ```HOLE``` production recognizes a substitution hole as a token type, and its value is the substitution hole number. The action rule ```h => (...subs) => subs[h]``` turns this into an n-ary function that returns the substition value provided for that hole.
 
-The grammar for our bnf language, extracted from src/bootbnf.es6, expressed in itself, is
+The grammar for our bnf language, extracted from src/bootbnf.js, expressed in itself, is
 
 ```javascript
   bnf`start ::= rule+ EOF            ${metaCompile};
@@ -59,19 +59,19 @@ The grammar for our bnf language, extracted from src/bootbnf.es6, expressed in i
     `
 ```
 
-where the action rules themselves only make sense within the context of src/bootbnf.es6.
+where the action rules themselves only make sense within the context of src/bootbnf.js.
 
 The ```**``` operator is an infix generalization of the usual postfix ```*```, with the right operand recognized as the separator. For example, ```x ** ","``` recognizes ```x```'s separated by commas. The value is the list of values associated with the left (```x```) operand.
 
 ```NUMBER``` and ```STRING``` are both recognized using the corresponding JSON productions. ```IDENT``` is what you'd expect. ```EOF``` recognizes the end of input.
 
-Quoted identifiers are keywords, and are therefore not recognized by the ```IDENT``` production within that grammer. Other quoted strings are literal tokens, but currently, only if they fit within the cheezy rules for recognizing operator tokens. See src/scanner.es6 for the current specifics. Instead, the operator token recognition for a given grammar should be based on which quoted strings actually appear in the grammar.
+Quoted identifiers are keywords, and are therefore not recognized by the ```IDENT``` production within that grammer. Other quoted strings are literal tokens, but currently, only if they fit within the cheezy rules for recognizing operator tokens. See src/scanner.js for the current specifics. Instead, the operator token recognition for a given grammar should be based on which quoted strings actually appear in the grammar.
 
 # Grammar Inheritance
 
 In addition to the rules it defines, our bnf grammar's own self description uses the identifiers ```EOF``` ,```IDENT```,  ```HOLE```, and ```STRING```. However, the only keywords it defines are ```"super"``` and ```"this"```, which it does not use. The reason is that this grammar inherits from ```bootbnf.defaultBaseGrammar```. The ```defaultBaseGrammar``` provides the rules for ```EOF``` ,```IDENT```,  ```HOLE```, and ```STRING```, as well as the expected rule for ```NUMBER```. The tags defined by the ```bnf``` tag also inherit from ```bootbnf.defaultBaseGrammar``` by default.
 
-The ```bnf``` tag also has an ```extends``` method for specifying a base grammar explicitly. For example, test/testbnf.es6 defines a bnf grammar for JSON called ```QuasiJSON```. The relevant parts are
+The ```bnf``` tag also has an ```extends``` method for specifying a base grammar explicitly. For example, test/testbnf.js defines a bnf grammar for JSON called ```QuasiJSON```. The relevant parts are
 
 ```javascript
 const QuasiJSON = bnf`
