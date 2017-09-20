@@ -44,7 +44,7 @@ module.exports = (function() {
     m(ast, specimen) {
       visit(ast, this)(specimen);
     }
-    def(_, name) {
+    define(_, name) {
       assert(this.env[name] !== uninitialized, `${name} not uninitialized`);
       return specimen => this.env[name] = specimen;
     }
@@ -114,13 +114,13 @@ module.exports = (function() {
       });
       return result;
     }
-    nest(_, decls) {
+    nest(ast) {
       const subEnv = Object.create(this.env);
       //xxx
       return new InterpVisitor(subEnv);
     }
-    script(_, stats) {
-      const nest = this.nest(stats);
+    script(ast, stats) {
+      const nest = this.nest(ast);
       let result = void 0;
       stats.forEach(stat => (result = nest.i(stat)));
       return result;
@@ -269,15 +269,15 @@ module.exports = (function() {
     '-='(_, lv,rv) { return this.assign(lv, o => o - this.i(rv)); }
 
     // The incoming side of refraction
-    arrow(_, ps,body) {
-      const nest = this.nest(['arrow', ps, body]);
+    arrow(ast, ps,body) {
+      const nest = this.nest(ast);
       return (...rest) => {
         new PatternVisitor(nest.env).matchAll(ps)(rest);
         nest.i(body);
       };
     }
-    lambda(_, ps,expr) {
-      const nest = this.nest(['arrow', ps, expr]);
+    lambda(ast, ps,expr) {
+      const nest = this.nest(ast);
       return (...rest) => {
         new PatternVisitor(nest.env).matchAll(ps)(rest);
         return nest.i(expr);
@@ -300,11 +300,11 @@ module.exports = (function() {
     }
     try(_, b,x) {
       visit(x, {
-        catch(_, patt, body) {
+        catch(catcher, patt, body) {
           try {
             return this.i(b);
           } catch (err) {
-            const nest = this.nest(x);
+            const nest = this.nest(catcher);
             match(patt, nest.env, err);
             return nest.i(body);
           }
@@ -325,11 +325,14 @@ module.exports = (function() {
     break(_, label=void 0) {}
     throw(_, e) { throw this.i(e); }
 
-    const(_, decls) {}
-    let(_, decls) {}
+    const(_, decls) { this.all(decls); }
+    let(_, decls) { this.all(decls); }
+    bind(patt, expr) {
+      match(patt, this.env)(this.i(expr));
+    }
     
-    block(_, stats) {
-      const nest = this.nest(stats);
+    block(ast, stats) {
+      const nest = this.nest(ast);
       let result = void 0;
       stats.forEach(stat => (result = nest.i(stat)));
       return result;

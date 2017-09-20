@@ -160,7 +160,7 @@ module.exports = (function() {
     / IDENT                                                ${id => ['prop',id,['use',id]]};
 
     pattern ::=
-      IDENT                                                ${n => ['def',n]}
+      IDENT                                                ${n => ['define',n]}
     / "[" param ** "," "]"                                 ${(_,ps,_2) => ['matchArray',ps]}
     / "{" propParam ** "," "}"                             ${(_,ps,_2) => ['matchObj',ps]}
     / HOLE                                                 ${h => ['patternHole',h]};
@@ -173,8 +173,8 @@ module.exports = (function() {
     propParam ::=
       key ":" pattern "=" expr                             ${(k,_,p,_2,e) => ['optionalProp',k,p,e]}
     / key ":" pattern                                      ${(k,_,p) => ['matchProp',k,p]}
-    / IDENT "=" expr                                       ${(id,_,e) => ['optionalProp',id,['def',id],e]}
-    / IDENT                                                ${id => ['matchProp',id,['def',id]]};
+    / IDENT "=" expr                                       ${(id,_,e) => ['optionalProp',id,['define',id],e]}
+    / IDENT                                                ${id => ['matchProp',id,['define',id]]};
 
     key ::=
       IDENT_NAME / STRING / NUMBER
@@ -243,7 +243,7 @@ module.exports = (function() {
       params NO_NEWLINE "=>" block                         ${(ps,_,_2,b) => ['arrow',ps,b]}
     / params NO_NEWLINE "=>" expr                          ${(ps,_,_2,e) => ['lambda',ps,e]};
     params ::=
-      IDENT                                                ${id => [['def',id]]}
+      IDENT                                                ${id => [['define',id]]}
     / "(" param ** "," ")"                                 ${(_,ps,_2) => ps};
 
     # No "var", empty statement, "continue", "with",
@@ -266,8 +266,8 @@ module.exports = (function() {
     / "debugger" ";"                                       ${(_,_2) => ['debugger']}
     / expr ";"                                             ${(e,_) => e};
 
-    # Each case branch must end in a terminating statement. No
-    # labelled break.
+    # Each case branch must end in a terminating statement.
+    # No labelled break. No continue.
     terminator ::=
       "return" NO_NEWLINE expr ";"                         ${(_,_2,e,_3) => ['return',e]}
     / "return" ";"                                         ${(_,_2) => ['return']}
