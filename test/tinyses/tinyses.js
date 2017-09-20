@@ -79,7 +79,7 @@ module.exports = (function() {
   // we avoid the need for a cover grammar.
 
   // Tiny Ses array literals exclude elision (i.e., nothing between
-  // commas). 
+  // commas).
 
   // Tiny Ses omits "arguments" and "eval".
   // EcmaScript/strict already limits "arguments" and "eval"
@@ -107,7 +107,7 @@ module.exports = (function() {
     QUASI_TAIL ::= ${() => FAIL};
 
     # Exclude "arguments" and "eval" from IDENT in tiny ses.
-    RESERVED_WORD ::= 
+    RESERVED_WORD ::=
       KEYWORD / ES6_ONLY_KEYWORD / FUTURE_RESERVED_WORD
     / "arguments" / "eval";
 
@@ -133,9 +133,12 @@ module.exports = (function() {
     / "implements" / "interface" / "package"
     / "private" / "protected" / "public";
 
+    IDENT_NAME ::=
+      IDENT / RESERVED_WORD;
+
     dataLiteral ::= NUMBER / STRING / "null" / "true" / "false";
 
-    # Tiny Ses primaryExpr does not include "this", ClassExpression, 
+    # Tiny Ses primaryExpr does not include "this", ClassExpression,
     # GeneratorExpression, or RegularExpressionLiteral.
     # No "function" functions.
     primaryExpr ::=
@@ -159,22 +162,22 @@ module.exports = (function() {
 
     param ::=
       "..." pattern                                        ${(_,p) => ['rest',p]}
-    / IDENT "=" expr                                       ${(id,_,e) => ['optional',id,e]}
+    / pattern "=" expr                                     ${(p,_,e) => ['optional',p,e]}
     / pattern;
 
     # No method definition.
     prop ::=
       key ":" expr                                         ${(k,_,e) => ['prop',k,e]}
-    / IDENT                                                ${id => ['prop',id,id]};
+    / IDENT                                                ${id => ['prop',id,['use',id]]};
 
     propParam ::=
       key ":" pattern "=" expr                             ${(k,_,p,_2,e) => ['optionalProp',k,p,e]}
     / key ":" pattern                                      ${(k,_,p) => ['matchProp',k,p]}
-    / IDENT "=" expr                                       ${(id,_,e) => ['optionalProp',id,id,e]}
-    / IDENT                                                ${id => ['matchProp',id,id]};
+    / IDENT "=" expr                                       ${(id,_,e) => ['optionalProp',id,['def',id],e]}
+    / IDENT                                                ${id => ['matchProp',id,['def',id]]};
 
-    key ::= 
-      IDENT / RESERVED_WORD / STRING / NUMBER
+    key ::=
+      IDENT_NAME / STRING / NUMBER
     / "[" expr "]"                                         ${(_,k) => ['computed', k]};
 
     quasiExpr ::=
@@ -187,12 +190,12 @@ module.exports = (function() {
     # separate MemberExpr and CallExpr productions.
     postExpr ::= primaryExpr postOp*                       ${binary};
     postOp ::=
-      "." IDENT                                            ${(_,id) => ['get',id]}
+      "." IDENT_NAME                                       ${(_,id) => ['get',id]}
     / "[" expr "]"                                         ${(_,e,_2) => ['index',e]}
     / "(" arg ** "," ")"                                   ${(_,args,_2) => ['call',args]}
     / quasiExpr                                            ${q => ['tag',q]}
 
-    / later IDENT                                          ${(_,id) => ['getLater',id]}
+    / later IDENT_NAME                                     ${(_,id) => ['getLater',id]}
     / later "[" expr "]"                                   ${(_,_2,e,_3) => ['indexLater',e]}
     / later "(" arg ** "," ")"                             ${(_,_2,args,_3) => ['callLater',args]}
     / later quasiExpr                                      ${(_,q) => ['tagLater',q]};
@@ -225,12 +228,14 @@ module.exports = (function() {
     # lValue is divided into IDENT and fieldExpr because tiny ses
     # syntactically disallows "delete" IDENT.
     # No pseudo-pattern lValues.
-    lValue ::= IDENT / fieldExpr;
+    lValue ::=
+      IDENT                                                ${n => ['use',n]}
+    / fieldExpr;
 
     fieldExpr ::=
-      primaryExpr "." IDENT                                ${(pe,_,id) => ['get',pe,id]}
+      primaryExpr "." IDENT_NAME                           ${(pe,_,id) => ['get',pe,id]}
     / primaryExpr "[" expr "]"                             ${(pe,_,e,_2) => ['index',pe,e]}
-    / primaryExpr later IDENT                              ${(pe,_,id) => ['getLater',pe,id]}
+    / primaryExpr later IDENT_NAME                         ${(pe,_,id) => ['getLater',pe,id]}
     / primaryExpr later "[" expr "]"                       ${(pe,_,_2,e,_3) => ['indexLater',pe,e]};
 
     # No bitwise operators
@@ -240,12 +245,12 @@ module.exports = (function() {
       params NO_NEWLINE "=>" block                         ${(ps,_,_2,b) => ['arrow',ps,b]}
     / params NO_NEWLINE "=>" expr                          ${(ps,_,_2,e) => ['lambda',ps,e]};
     params ::=
-      IDENT                                                ${id => [id]}
+      IDENT                                                ${id => [['def',id]]}
     / "(" param ** "," ")"                                 ${(_,ps,_2) => ps};
 
     # No "var", empty statement, "continue", "with",
     # "for/in", or labelled statement.
-    # None of the insane variations of "for". 
+    # None of the insane variations of "for".
     # Only blocks are accepted for flow-of-control statements.
     statement ::=
       block

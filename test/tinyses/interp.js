@@ -27,24 +27,37 @@ module.exports = (function() {
   }
 
   function match(ast, env, specimen) {
-    visit(ast, new MatchVisitor(env, specimen));
+    visit(ast, new MatchVisitor(env))(specimen);
   }
 
   class MatchVisitor {
-    constructor(env, specimen) {
+    constructor(env) {
       this.env = env;
-      this.specimen = specimen;
+    }
+    m(ast, specimen) {
+      visit(ast, this)(specimen);
     }
     def(name) {
       if (this.env[name] !== uninitialized) {
         throw new Panic(`${name} not uninitialized`);
       }
-      this.env[name] = this.specimen;
+      return specimen => this.env[name] = specimen;
     }
     matchArray(params) {
-      params.forEach((param, i) => {
-        match(param, this.env, this.specimen[i]);
-      });
+      return specimen => {
+        params.forEach((param, i) => {
+          const paramVisitor = def({
+            __proto__: this,
+            rest(patt) {
+              //xxx
+            },
+            optional(id,expr) {
+              //xxx
+            }
+          });
+          visit(param, paramVisitor)(specimen[i]);
+        });
+      };
     }
     matchObj(propParams) {
       propParams.forEach((propParam, i) => {
