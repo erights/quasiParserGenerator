@@ -251,8 +251,8 @@ module.exports = (function() {
         },
         index(base, index) {
           const obj = this.i(base);
-          const id = this.i(index);
-          return obj[id] = updateFn(obj[id]);
+          const key = this.i(index);
+          return obj[key] = updateFn(obj[key]);
         },
         getLater(base, id) {},
         indexLater(base, index) {}
@@ -265,22 +265,66 @@ module.exports = (function() {
     '+='(lv,rv) { return this.assign(lv, o => o + this.i(rv)); }
     '-='(lv,rv) { return this.assign(lv, o => o - this.i(rv)); }
 
-    arrow(ps,body) {}
-    lambda(ps,expr) {}
-    if(c,t,e=void 0) {}
+    // The incoming side of refraction
+    arrow(ps,body) {
+      const nest = this.nest(['arrow', ps, body]);
+      return (...rest) => {
+        new PatternVisitor(nest.env).matchArray(ps)(rest);
+        nest.i(body);
+      };
+    }
+    lambda(ps,expr) {
+      const nest = this.nest(['arrow', ps, expr]);
+      return (...rest) => {
+        new PatternVisitor(nest.env).matchArray(ps)(rest);
+        return nest.i(expr);
+      };
+    }
+    
+    if(c,t,e=void 0) {
+      if (this.i(c)) {
+        return this.i(t);
+      } else if (e) {
+        return this.i(e);
+      } else {
+        return void 0;
+      }
+    }
     for(d,c,i,b) {}
     forOf(d,e,b) {}
-    while(c,b) {}
-    try(b,x,y=void 0) {}
+    while(c,b) {
+      while (this.i(c)) { this.i(b); }
+    }
+    try(b,x) {
+      visit(x, {
+        catch(patt, body) {
+          try {
+            return this.i(b);
+          } catch (err) {
+            const nest = this.nest(x);
+            match(patt, nest.env, err);
+            return nest.i(body);
+          }
+        },
+        finally(body) {
+          try {
+            return this.i(b);
+          } finally {
+            return this.i(body);
+          }
+        }
+      });
+    }
     switch(e,bs) {}
     debugger() { debugger; }
 
     return(e=void 0) {}
     break(label=void 0) {}
-    throw(e) {}
+    throw(e) { throw this.i(e); }
 
     const(decls) {}
     let(decls) {}
+    
     block(stats) {
       const nest = this.nest(stats);
       let result = void 0;
