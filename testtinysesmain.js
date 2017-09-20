@@ -1,20 +1,20 @@
 // Options: --free-variable-checker --require --validate
 /*global module require*/
 
-/**
- * Note that this test is a .js file written in ES5.
- */
 module.exports = (function(){
   "use strict";
 
-  var sesshim = require('./src/sesshim.js');
-  var def = sesshim.def;
-  var tinysesMod = require('./test/tinyses/tinyses.js');
-  var tinyses = tinysesMod.tinyses;
+  const {def} = require('./src/sesshim.js');
+  const {tinyses} = require('./test/tinyses/tinyses.js');
 
   console.log('----------');
-  var ast = tinyses`2+3;`;
+  const ast = tinyses`2+ii;`;
   console.log(JSON.stringify(ast));
+
+  const {interp} = require('./test/tinyses/interp.js');
+
+  const val = interp(ast, {ii: 3});
+  console.log(val);
 
   return def({});
 }());

@@ -139,7 +139,7 @@ module.exports = (function() {
     # GeneratorExpression, or RegularExpressionLiteral.
     # No "function" functions.
     primaryExpr ::=
-      IDENT
+      IDENT                                                ${n => ['use',n]}
     / dataLiteral                                          ${n => ['data',JSON.parse(n)]}
     / "[" arg ** "," "]"                                   ${(_,es,_2) => ['array',es]}
     / "{" prop ** "," "}"                                  ${(_,ps,_2) => ['object',ps]}
@@ -148,8 +148,7 @@ module.exports = (function() {
     / HOLE                                                 ${h => ['exprHole',h]};
 
     pattern ::=
-      IDENT
-    / dataLiteral                                          ${n => ['matchData',JSON.parse(n)]}
+      IDENT                                                ${n => ['def',n]}
     / "[" param ** "," "]"                                 ${(_,ps,_2) => ['matchArray',ps]}
     / "{" propParam ** "," "}"                             ${(_,ps,_2) => ['matchObj',ps]}
     / HOLE                                                 ${h => ['patternHole',h]};
@@ -165,12 +164,11 @@ module.exports = (function() {
 
     # No method definition.
     prop ::=
-      "..." expr                                           ${(_,e) => ['spreadObj',e]}
-    / key ":" expr                                         ${(k,_,e) => ['prop',k,e]}
+      key ":" expr                                         ${(k,_,e) => ['prop',k,e]}
     / IDENT                                                ${id => ['prop',id,id]};
 
     propParam ::=
-      "..." pattern                                        ${(_,p) => ['restObj',p]}
+      key ":" pattern "=" expr                             ${(k,_,p,_2,e) => ['optionalProp',k,p,e]}
     / key ":" pattern                                      ${(k,_,p) => ['matchProp',k,p]}
     / IDENT "=" expr                                       ${(id,_,e) => ['optionalProp',id,id,e]}
     / IDENT                                                ${id => ['matchProp',id,id]};

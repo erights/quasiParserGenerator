@@ -4,7 +4,7 @@
 module.exports = (function(){
   "use strict";
   
-    const {def} = require('./sesshim.js');
+  const {def} = require('./sesshim.js');
   const {re} = require('./qregexp.js');
 
   const FAIL = def({toString: () => 'FAIL'});

@@ -5,34 +5,67 @@ module.exports = (function() {
 
   const {def} = require('../../src/sesshim.js');
 
-  function interp(ast, env) {
-    switch (typeof ast) {
-      case 'object': {
-        return new Interp(env).i(ast);
+  class Panic extends Error {}
+
+  const uninitialized = def({});
+
+  function visit(ast, visitor) {
+    if (!Array.isArray(ast)) {
+      throw new Panic(`unrecognized: ast ${typeof ast}`);
+    }
+    if (ast.length === 0 || Array.isArray(ast[0])) {
+      throw new Panic(`ast list mistaken for ast ${typeof ast}`);
+    }
+    const [kind, ...body] = ast;
+    if (!(kind in visitor)) {
+      if ('defaultVisit' in visitor) {
+        return visitor.defaultVisit(ast);
       }
-      default: {
-        throw new Error(`unrecognized: ast ${typeof ast}`);
+      throw new Panic(`unrecognized ast kind ${kind}`);
+    }
+    return visitor[kind](...body);
+  }
+
+  function match(ast, env, specimen) {
+    visit(ast, new MatchVisitor(env, specimen));
+  }
+
+  class MatchVisitor {
+    constructor(env, specimen) {
+      this.env = env;
+      this.specimen = specimen;
+    }
+    def(name) {
+      if (this.env[name] !== uninitialized) {
+        throw new Panic(`${name} not uninitialized`);
       }
+      this.env[name] = this.specimen;
+    }
+    matchArray(params) {
+      params.forEach((param, i) => {
+        match(param, this.env, this.specimen[i]);
+      });
+    }
+    matchObj(propParams) {
+      propParams.forEach((propParam, i) => {
+      });
     }
   }
 
-  function visit(sexpr, visitor) {
-    return visitor[sexpr[0]](...sexpr.slice(1));
+  function interp(ast, env) {
+    return new InterpVisitor(env).i(ast);
   }
 
-  class Interp {
+  class InterpVisitor {
     constructor(env) {
       this.env = env;
     }
     i(ast) {
-      switch (typeof ast) {
-        case 'object': { return visit(ast, this); }
-        default: { throw new Error(`unrecognized: ast ${typeof ast}`); }
-      }
+      return visit(ast, this);
     }
     all(args) {
       const result = [];
-      args.map(arg => {
+      args.forEach(arg => {
         if (typeof arg === 'object' && arg[0] === 'spread') {
           result.push(...this.i(arg[1]));
         } else {
@@ -42,12 +75,24 @@ module.exports = (function() {
       return result;
     }
     nest(decls) {
-      
+      const subEnv = Object.create(this.env);
+      //xxx
+      return new InterpVisitor(subEnv);
     }
     script(stats) {
       const nest = this.nest(stats);
       let result = void 0;
       stats.forEach(stat => (result = nest.i(stat)));
+      return result;
+    }
+    use(name) {
+      if (!(name in this.env)) {
+        throw new ReferenceError(`${name} not found`);
+      }
+      const result = this.env[name];
+      if (result === uninitialized) {
+        throw new TypeError(`${name} not initialized`);
+      }
       return result;
     }
     data(value) {

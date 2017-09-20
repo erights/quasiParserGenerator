@@ -1,7 +1,3 @@
-// Using the subset of ES6 currently supported by FF Nightly 42.0a1 (2015-08-01)
-// For full ES6:
-// * replace "var" below with "let"
-
 "use strict";
 
 RegExp.make = (function () {
