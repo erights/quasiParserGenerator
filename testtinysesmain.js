@@ -8,11 +8,17 @@ module.exports = (function(){
   const {tinyses} = require('./test/tinyses/tinyses.js');
 
   console.log('----------');
-  const ast = tinyses`2+ii;`;
+  let ast = tinyses`2+ii;`;
   console.log(JSON.stringify(ast));
 
-  const {interp} = require('./test/tinyses/interp.js');
+  const {desugar,scope,interp} = require('./test/tinyses/interp.js');
 
+  ast = desugar(ast);
+  console.log(JSON.stringify(ast));
+
+  ast = scope(ast);
+  console.log(JSON.stringify(ast));
+  
   const val = interp(ast, {ii: 3});
   console.log(val);
 

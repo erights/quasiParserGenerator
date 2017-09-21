@@ -15,7 +15,7 @@ module.exports = (function() {
 
   function visit(ast, visitor) {
     if (Array.isArray(ast)) {
-      if (ast.length >= 1 && typeof ast[0] === 'string') {
+      if (typeof ast[0] === 'string') {
         const [kind, ...body] = ast;
         if (kind in visitor) {
           return visitor[kind](ast, ...body);
@@ -44,29 +44,71 @@ module.exports = (function() {
     }
   }
 
+  function desugar(ast) {
+    return visit(ast, new DesugarVisitor());
+  }
+
   class DesugarVisitor extends ReplaceVisitor {
     getLater(_, base, index) {
-      base = visit(base, this);
-      index = visit(index, this);
+      base = this.visitAst(base);
+      index = this.visitAst(index);
       return tinyses`Q(${base}).get(${index})`;
     }
     callLater(_, base, args) {
-      base = visit(base, this);
-      args = args.map(arg => visit(arg, this));
+      base = this.visitAst(base);
+      args = this.visitAsts(args);
       return tinyses`Q(${base}).fcall(...${args})`;
     }
     call(_, base, args) {
-      args = args.map(arg => visit(arg, this));
-      if (Array.isArray(base) && base.length >= 1) {
-        if (base[0] === 'getLater') {
-          return tinyses`Q(${base[1]}).post(${base[2]}, ...${args})`;
-        }
+      args = this.visitAsts(args);
+      if (Array.isArray(base) && base[0] === 'getLater') {
+        const baseBase = this.visitAst(base[1]);
+        const baseIndex = this.visitAst(base[2]);
+        return tinyses`Q(${baseBase}).post(${baseIndex}, ...${args})`;
       }
-      base = visit(base, this);
+      base = this.visitAst(base);
       return ['call', base, args];
     }
-    // quasi and tagged quasi
     // putLater, deleteLater
+    // quasi, tag, tagLater
+    lambda(_, params, expr) {
+      params = this.visitAsts(params);
+      expr = this.visitAst(expr);
+      return tinyses`(...${params}) => { return ${expr}; }`;
+      // should be equivalent to
+      // return ['arrow', params, ['block', [['return', expr]]]];
+    }
+  }
+
+  function scope(ast) {
+    return visit(ast, new ScopeVisitor());
+  }
+
+  class ScopeVisitor extends ReplaceVisitor {
+    constructor() {
+      super();
+      this.defines = [];
+    }
+    define(ast, name) {
+      this.defines.push(ast);
+    }
+    shadow(thunk) {
+      const outer = this.defines;
+      const result = thunk();
+      result.vars = this.defines;
+      this.defines = outer;
+      return result;
+    }
+    script(_, body) {
+      return this.shadow(() => ['script', this.visitAsts(body)]);
+    }
+    block(_, body) {
+      return this.shadow(() => ['block', this.visitAsts(body)]);
+    }
+    arrow(_, params, block) {
+      return this.shadow(() => ['arrow', this.visitAsts(params),
+                                this.visitAst(block)]);
+    }
   }
     
 
@@ -86,10 +128,6 @@ module.exports = (function() {
     constructor(env) {
       this.env = env;
     }
-    define(_, name) {
-      assert(this.env[name] !== uninitialized, `${name} not uninitialized`);
-      return specimen => this.env[name] = specimen;
-    }
     matchAll(params) {
       const patternVisitor = this;
       return specimen => {
@@ -108,6 +146,10 @@ module.exports = (function() {
           visit(param, paramVisitor)(specimen[i]);
         });
       };
+    }
+    define(_, name) {
+      assert(this.env[name] !== uninitialized, `${name} not uninitialized`);
+      return specimen => this.env[name] = specimen;
     }
     matchArray(_, params) {
       return this.matchAll(params);
@@ -156,17 +198,6 @@ module.exports = (function() {
       });
       return result;
     }
-    nest(ast) {
-      const subEnv = Object.create(this.env);
-      //xxx
-      return new InterpVisitor(subEnv);
-    }
-    script(ast, stats) {
-      const nest = this.nest(ast);
-      let result = void 0;
-      stats.forEach(stat => (result = nest.i(stat)));
-      return result;
-    }
     use(_, name) {
       if (!(name in this.env)) {
         throw new ReferenceError(`${name} not found`);
@@ -193,28 +224,12 @@ module.exports = (function() {
     get(_, base, index) { return this.i(base)[this.i(index)]; }
 
     call(_, fnExpr, args) {
-      if (Array.isArray(fnExpr)) {
-        if (fnExpr[0] === 'getLater') {
-          return Q(this.i(fnExpr[1])).post(this.i(fnExpr[2]),
-                                           ...this.all(args));
-        }
-      }
       return this.i(fnExpr)(...this.all(args));
     }
-    tag(_, tagExpr, quasiAst) {
-      //xxx
-    }
-    callLater(_, fnExpr, args) {
-      return Q(this.i(fnExpr)).fcall(...this.all(args));
-    }
-    // tagLater
 
     delete(_, fe) {
       return visit(fe, {
-        get(_, base, index) { return delete this.i(base)[this.i(index)]; },
-        getLater(_, base, index) {
-          return Q(this.i(base)).delete(this.i(index));
-        }
+        get(_, base, index) { return delete this.i(base)[this.i(index)]; }
       });
     }
     void(_, e) { return void this.i(e); }
@@ -256,8 +271,7 @@ module.exports = (function() {
         },
         get(_, base, index) {
           return this.i(base)[this.i(index)] = this.i(rv);
-        },
-        getLater(_, base, index) {}
+        }
       });
     }
 
@@ -277,8 +291,7 @@ module.exports = (function() {
           const obj = this.i(base);
           const key = this.i(index);
           return obj[key] = updateFn(obj[key]);
-        },
-        getLater(_, base, index) {}
+        }
       });
     }
 
@@ -288,22 +301,6 @@ module.exports = (function() {
     '+='(_, lv,rv) { return this.assign(lv, o => o + this.i(rv)); }
     '-='(_, lv,rv) { return this.assign(lv, o => o - this.i(rv)); }
 
-    // The incoming side of refraction
-    arrow(ast, ps,body) {
-      const nest = this.nest(ast);
-      return (...rest) => {
-        new PatternVisitor(nest.env).matchAll(ps)(rest);
-        nest.i(body);
-      };
-    }
-    lambda(ast, ps,expr) {
-      const nest = this.nest(ast);
-      return (...rest) => {
-        new PatternVisitor(nest.env).matchAll(ps)(rest);
-        return nest.i(expr);
-      };
-    }
-    
     if(_, c,t,e=void 0) {
       if (this.i(c)) {
         return this.i(t);
@@ -318,7 +315,7 @@ module.exports = (function() {
     while(_, c,b) {
       while (this.i(c)) { this.i(b); }
     }
-    try(_, b,x) {
+    try(_, b,x,y=void 0) {
       visit(x, {
         catch(catcher, patt, body) {
           try {
@@ -351,13 +348,32 @@ module.exports = (function() {
       match(patt, this.env)(this.i(expr));
     }
     
+    nest(ast) {
+      const subEnv = Object.create(this.env);
+      ast.vars.forEach(([_, name]) => subEnv[name] = uninitialized);
+      return new InterpVisitor(subEnv);
+    }
+    script(ast, stats) {
+      const nest = this.nest(ast);
+      let completionValue = void 0;
+      stats.forEach(stat => (completionValue = nest.i(stat)));
+      return completionValue;
+    }
     block(ast, stats) {
       const nest = this.nest(ast);
       let result = void 0;
       stats.forEach(stat => (result = nest.i(stat)));
       return result;
     }
+    // The incoming side of refraction
+    arrow(ast, ps,block) {
+      const nest = this.nest(ast);
+      return (...rest) => {
+        new PatternVisitor(nest.env).matchAll(ps)(rest);
+        nest.i(block);
+      };
+    }
   }
 
-  return def({interp});
+  return def({desugar, scope, interp});
 }());
