@@ -8,7 +8,7 @@ module.exports = (function(){
   const {tinyses} = require('./test/tinyses/tinyses.js');
 
   console.log('----------');
-  let ast = tinyses`2+ii;`;
+  let ast = tinyses`22.toString(ii);`;
   console.log(JSON.stringify(ast));
 
   const {desugar,scope,interp} = require('./test/tinyses/interp.js');

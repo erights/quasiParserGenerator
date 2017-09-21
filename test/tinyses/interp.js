@@ -61,10 +61,16 @@ module.exports = (function() {
     }
     call(_, base, args) {
       args = this.visitAsts(args);
-      if (Array.isArray(base) && base[0] === 'getLater') {
-        const baseBase = this.visitAst(base[1]);
-        const baseIndex = this.visitAst(base[2]);
-        return tinyses`Q(${baseBase}).post(${baseIndex}, ...${args})`;
+      if (Array.isArray(base)) {
+        if (base[0] === 'get') {
+          const baseBase = this.visitAst(base[1]);
+          const baseIndex = this.visitAst(base[2]);
+          return ['mcall', baseBase, baseIndex, args];
+        } else if (base[0] === 'getLater') {
+          const baseBase = this.visitAst(base[1]);
+          const baseIndex = this.visitAst(base[2]);
+          return tinyses`Q(${baseBase}).post(${baseIndex}, ...${args})`;
+        }
       }
       base = this.visitAst(base);
       return ['call', base, args];
@@ -221,10 +227,11 @@ module.exports = (function() {
       }));
       return result;
     }
+    
     get(_, base, index) { return this.i(base)[this.i(index)]; }
-
-    call(_, fnExpr, args) {
-      return this.i(fnExpr)(...this.all(args));
+    call(_, fnExpr, args) { return this.i(fnExpr)(...this.all(args)); }
+    mcall(_, base, index, args) {
+      return this.i(base)[this.i(index)](...this.all(args));
     }
 
     delete(_, fe) {
