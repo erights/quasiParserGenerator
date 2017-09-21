@@ -1,4 +1,4 @@
-/*global module require Q */
+/*global module require Q tinyses */
 
 module.exports = (function() {
   "use strict";
@@ -14,16 +14,62 @@ module.exports = (function() {
   const uninitialized = def({});
 
   function visit(ast, visitor) {
-    assert(Array.isArray(ast), `unrecognized: ast ${typeof ast}`);
-    assert(ast.length >= 1 && typeof ast[0] === 'string',
-           `ast list mistaken for ast ${typeof ast}`);
-    const [kind, ...body] = ast;
-    if (!(kind in visitor)) {
-      assert('defaultVisit' in visitor, `unrecognized ast kind ${kind}`);
-      return visitor.defaultVisit(ast);
+    if (Array.isArray(ast)) {
+      if (ast.length >= 1 && typeof ast[0] === 'string') {
+        const [kind, ...body] = ast;
+        if (kind in visitor) {
+          return visitor[kind](ast, ...body);
+        }
+        assert('visitAst' in visitor, `unrecognized ast kind ${kind}`);
+        return visitor.visitAst(ast);
+      }
+      assert('visitAsts' in visitor, `ast list mistaken for ast ${typeof ast}`);
+      return visitor.visitAsts(ast);
     }
-    return visitor[kind](ast, ...body);
+    assert(ast !== Object(ast), `primitive data expected ${typeof ast}`);
+    assert('visitData' in visitor, `unrecognized: ast ${typeof ast}`);
+    return visitor.visitData(ast);
   }
+
+
+  class ReplaceVisitor {
+    visitAst([kind, ...body]) {
+      return [kind, ...body.map(e => visit(e, this))];
+    }
+    visitAsts(asts) {
+      return asts.map(ast => visit(ast, this));
+    }
+    visitData(data) {
+      return data;
+    }
+  }
+
+  class DesugarVisitor extends ReplaceVisitor {
+    indexLater(base, index) {
+      base = visit(base, this);
+      index = visit(index, this);
+      return tinyses`Q(${base}).get(${index})`;
+    }
+    getLater(base, id) {
+      base = visit(base, this);
+      return tinyses`Q(${base}).get(${['data',id]})`;
+    }
+    callLater(base, args) {
+      base = visit(base, this);
+      args = args.map(arg => visit(arg, this));
+      if (Array.isArray(base) && base.length >= 1) {
+        if (base[0] === 'indexLater') {
+          return tinyses`Q(${base[1]}).post(${base[2]}, ...${args})`;
+        } else if (base[0] === 'getLater') {
+          return tinyses`Q(${base[1]}).post(${['data',base[2]]}, ...${args})`;
+        }
+      }
+      return tinyses`Q(${base}).fcall(...${args})`;
+    }
+    // quasi and tagged quasi
+    // putLater, deleteLater
+  }
+    
 
   function interpKey(ast, env) {
     if (Array.isArray(ast) && ast[0] === 'computed') {
@@ -40,9 +86,6 @@ module.exports = (function() {
   class PatternVisitor {
     constructor(env) {
       this.env = env;
-    }
-    m(ast, specimen) {
-      visit(ast, this)(specimen);
     }
     define(_, name) {
       assert(this.env[name] !== uninitialized, `${name} not uninitialized`);
