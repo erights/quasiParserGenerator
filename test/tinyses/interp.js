@@ -45,16 +45,16 @@ module.exports = (function() {
   }
 
   class DesugarVisitor extends ReplaceVisitor {
-    indexLater(base, index) {
+    indexLater(_, base, index) {
       base = visit(base, this);
       index = visit(index, this);
       return tinyses`Q(${base}).get(${index})`;
     }
-    getLater(base, id) {
+    getLater(_, base, id) {
       base = visit(base, this);
       return tinyses`Q(${base}).get(${['data',id]})`;
     }
-    callLater(base, args) {
+    callLater(_, base, args) {
       base = visit(base, this);
       args = args.map(arg => visit(arg, this));
       if (Array.isArray(base) && base.length >= 1) {
