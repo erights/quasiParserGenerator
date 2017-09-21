@@ -197,10 +197,10 @@ module.exports = (function() {
     / later quasiExpr                                      ${(_,q) => ['tagLater',q]};
 
     fieldOp ::=
-      "." IDENT_NAME                                       ${(_,id) => ['get',id]}
-    / "[" expr "]"                                         ${(_,e,_2) => ['index',e]}
-    / later IDENT_NAME                                     ${(_,id) => ['getLater',id]}
-    / later "[" expr "]"                                   ${(_,_2,e,_3) => ['indexLater',e]};
+      "." IDENT_NAME                                       ${(_,id) => ['get',['data',id]]}
+    / "[" expr "]"                                         ${(_,e,_2) => ['get',e]}
+    / later IDENT_NAME                                     ${(_,id) => ['getLater',['data',id]]}
+    / later "[" expr "]"                                   ${(_,_2,e,_3) => ['getLater',e]};
 
     # lValue is divided into IDENT and fieldExpr because tiny ses
     # syntactically disallows "delete" IDENT.

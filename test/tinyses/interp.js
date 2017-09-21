@@ -45,26 +45,25 @@ module.exports = (function() {
   }
 
   class DesugarVisitor extends ReplaceVisitor {
-    indexLater(_, base, index) {
+    getLater(_, base, index) {
       base = visit(base, this);
       index = visit(index, this);
       return tinyses`Q(${base}).get(${index})`;
     }
-    getLater(_, base, id) {
-      base = visit(base, this);
-      return tinyses`Q(${base}).get(${['data',id]})`;
-    }
     callLater(_, base, args) {
       base = visit(base, this);
       args = args.map(arg => visit(arg, this));
+      return tinyses`Q(${base}).fcall(...${args})`;
+    }
+    call(_, base, args) {
+      args = args.map(arg => visit(arg, this));
       if (Array.isArray(base) && base.length >= 1) {
-        if (base[0] === 'indexLater') {
+        if (base[0] === 'getLater') {
           return tinyses`Q(${base[1]}).post(${base[2]}, ...${args})`;
-        } else if (base[0] === 'getLater') {
-          return tinyses`Q(${base[1]}).post(${['data',base[2]]}, ...${args})`;
         }
       }
-      return tinyses`Q(${base}).fcall(...${args})`;
+      base = visit(base, this);
+      return ['call', base, args];
     }
     // quasi and tagged quasi
     // putLater, deleteLater
@@ -191,22 +190,11 @@ module.exports = (function() {
       }));
       return result;
     }
-    quasi(_, ...parts) {
-      //xxx
-    }
-    get(_, base, id) { return this.i(base)[id]; }
-    index(_, base, index) { return this.i(base)[this.i(index)]; }
-    getLater(_, base, id) { return Q(this.i(base)).get(id); }
-    indexLater(_, base, index) {
-      return Q(this.i(base)).get(this.i(index));
-    }
+    get(_, base, index) { return this.i(base)[this.i(index)]; }
 
     call(_, fnExpr, args) {
       if (Array.isArray(fnExpr)) {
         if (fnExpr[0] === 'getLater') {
-          return Q(this.i(fnExpr[1])).post(fnExpr[2],
-                                           ...this.all(args));
-        } else if (fnExpr[0] === 'indexLater') {
           return Q(this.i(fnExpr[1])).post(this.i(fnExpr[2]),
                                            ...this.all(args));
         }
@@ -223,10 +211,8 @@ module.exports = (function() {
 
     delete(_, fe) {
       return visit(fe, {
-        get(_, base, id) { return delete this.i(base)[id]; },
-        index(_, base, index) { return delete this.i(base)[this.i(index)]; },
-        getLater(_, base, id) { return Q(this.i(base)).delete(id); },
-        indexLater(_, base, index) {
+        get(_, base, index) { return delete this.i(base)[this.i(index)]; },
+        getLater(_, base, index) {
           return Q(this.i(base)).delete(this.i(index));
         }
       });
@@ -268,14 +254,10 @@ module.exports = (function() {
           }
           return this.env[name] = this.i(rv);
         },
-        get(_, base, id) {
-          return this.i(base)[id] = this.i(rv);
-        },
-        index(_, base, index) {
+        get(_, base, index) {
           return this.i(base)[this.i(index)] = this.i(rv);
         },
-        getLater(_, base, id) {},
-        indexLater(_, base, index) {}
+        getLater(_, base, index) {}
       });
     }
 
@@ -291,17 +273,12 @@ module.exports = (function() {
           }
           return this.env[name] = updateFn(old);
         },
-        get(_, base, id) {
-          const obj = this.i(base);
-          return obj[id] = updateFn(obj[id]);
-        },
-        index(_, base, index) {
+        get(_, base, index) {
           const obj = this.i(base);
           const key = this.i(index);
           return obj[key] = updateFn(obj[key]);
         },
-        getLater(_, base, id) {},
-        indexLater(_, base, index) {}
+        getLater(_, base, index) {}
       });
     }
 
