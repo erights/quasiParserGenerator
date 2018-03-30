@@ -13,6 +13,7 @@ module.exports = (function(){
   var sesshim = require('./src/sesshim.es6');
   var def = sesshim.def;
   require('./test/testbnf.es6');
-
+  const x= 1;
+  x;
   return def({});
 }());
