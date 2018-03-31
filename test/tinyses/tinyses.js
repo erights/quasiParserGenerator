@@ -43,7 +43,7 @@ module.exports = (function() {
   // impose the NO_NEWLINE constraints from ES6, so that every
   // non-rejected TinySES program is accepted as the same SES
   // program. NO_NEWLINE is a lexical-level placeholder that must
-  // never consume anything. It should fail if the whitespace to skip
+  // never consumes anything. It should fail if the whitespace to skip
   // over contains a newline. TODO: Currently this placeholder always
   // succeeds.
 
@@ -88,7 +88,7 @@ module.exports = (function() {
   // and spread which provides the useful functionality of "arguments"
   // with less confusion.  The EcmaScript/strict "eval" can be used
   // for both direct and indirect eval. TinySES has no direct eval and
-  // can use other evaluator APIs to make up the difference.
+  // can use other evaluator APIs to partially make up the difference.
 
   // TinySES omits computed property names. TinySES has syntax for
   // mutating only number-named properties, which include floating
@@ -106,7 +106,7 @@ module.exports = (function() {
   // difference between SES and TinySES.
 
   // Beyond subsetting ES6, this grammar also includes the infix "!"
-  // (eventually) operator from
+  // (eventually) operator from Dr.SES
   // http://research.google.com/pubs/pub40673.html
 
   // Defensive TinySES arrays should be sealed or frozen, and all
@@ -114,8 +114,8 @@ module.exports = (function() {
   // present a tamper-proof API surface to potential SES
   // adversaries. Unfortunately, sealed arrays cannot grow, and
   // extensible arrays cannot reject the addition of non-number-named
-  // properties. Doing this manually is accident prone, which can be
-  // mitigated in the following ways:
+  // properties. Manually tamper proofing API surface is accident
+  // prone, which can be mitigated in the following ways:
   //    * Static analysis to diagnose where tamper proofing operations
   //      need to be added.
   //    * Source-to-source transformation of TinySES to TinySES where
@@ -137,6 +137,16 @@ module.exports = (function() {
   // properties. Thus, automatic tamper proofing, such as by
   // source-to-source transformation would make little semantic
   // difference to Standalone TinySES programs.
+
+  // What else can Standalone TinySES omit from the SES standard
+  // library?
+
+  // Open question: Can Standalone TinySES with automated tamper
+  // proofing be soundly statically typed with a structural type
+  // system? What about trademarks/nominal-types and auditors? How
+  // would this map to the wasm type system which does tag checking
+  // but no deep parameterized type checking?
+
 
   const tinyses = bnf`
     # TODO: module syntax
@@ -275,7 +285,8 @@ module.exports = (function() {
     / orElseExpr;
 
     # lValue is only useVar or elementExpr in TinySES.
-    # Include only elementExpr from fieldExpr to avoid mutating non-numeric properties.
+    # Include only elementExpr from fieldExpr to avoid mutating
+    # non-number-named properties.
     # Syntactically disallow ("delete" IDENT).
     # No pseudo-pattern lValues.
     lValue ::= elementExpr / useVar;
