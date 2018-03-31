@@ -25,22 +25,22 @@ module.exports = (function() {
   const {FAIL, Packratter} = require('../../src/scanner.js');
   // Packratter._debug = true;
 
-  // Whereas SES is a maximal ocap-secure subset of ES6 (EcmaScript
-  // 2015), TinySES is a minimal "better parts"
+  // Whereas SES is a maximal ocap-secure subset of ES8 (EcmaScript
+  // 2017), TinySES is a minimal "better parts"
   // (http://www.infoq.com/presentations/efficient-programming-language-es6)
   // subset of SES. SES is a semantic, not a syntactic, subset of
-  // ES6. TinySES is mostly defined as a syntactic subset of SES. The
+  // ES8. TinySES is mostly defined as a syntactic subset of SES. The
   // following TinySES grammar is based on
-  // http://www.ecma-international.org/ecma-262/6.0/#sec-grammar-summary
+  // http://www.ecma-international.org/ecma-262/8.0/#sec-grammar-summary
   // Unlike that page, lexical productions are named in all upper
   // case. The intention is that TinySES be a true subset of SES in
   // the sense that every valid TinySES program is a valid SES program
-  // of the same meaning. TinySES is a superset of JSON.
-  // JSON < TinySES < SES < ES6
+  // of the same meaning. The TinySES expression grammar is a superset
+  // of JSON.  JSON < TinySES < SES < ES8 strict < ES8
 
-  // Unlike ES6 and SES, TinySES has no semicolon insertion, and so
+  // Unlike ES8 and SES, TinySES has no semicolon insertion, and so
   // does not need a parser able to handle that. However, TinySES must
-  // impose the NO_NEWLINE constraints from ES6, so that every
+  // impose the NO_NEWLINE constraints from ES8, so that every
   // non-rejected TinySES program is accepted as the same SES
   // program. NO_NEWLINE is a lexical-level placeholder that must
   // never consumes anything. It should fail if the whitespace to skip
@@ -54,7 +54,7 @@ module.exports = (function() {
   // plague JavaScript lexers.
 
   // In TinySES, all reserved words are unconditionally reserved. By
-  // contrast, in ES6 and SES, "yield", "await", "implements", etc are
+  // contrast, in ES8 and SES, "yield", "await", "implements", etc are
   // conditionally reserved. Thus we avoid the need for parameterized
   // lexical-level productions.
 
@@ -72,7 +72,7 @@ module.exports = (function() {
   // fail.
 
   // Ouside the lexical grammar, other differences from
-  // http://www.ecma-international.org/ecma-262/6.0/#sec-grammar-summary
+  // http://www.ecma-international.org/ecma-262/8.0/#sec-grammar-summary
   // are noted as comments within the grammar below.  That page uses a
   // cover grammar to avoid unbounded lookahead. Because the grammar
   // here is defined using a PEG (parsing expression grammar) which
@@ -98,14 +98,13 @@ module.exports = (function() {
   // other property names.
 
   // TinySES may eventually be extended with the following elements of
-  // SES: "function" function declarations and expressions, generators
-  // and async functions, arrow function and concise method forms of
-  // these, continue, label and break and continue to label, and
-  // symbols and general computed property access. However, TinySES
-  // will continue to omit "this" as that is the central defining
-  // difference between SES and TinySES.
+  // SES: "function" function declarations and expressions, async
+  // functions, arrow function and concise method forms of
+  // these, symbols, and general computed property access. However,
+  // TinySES will continue to omit "this" as that is the central
+  // defining difference between SES and TinySES.
 
-  // Beyond subsetting ES6, this grammar also includes the infix "!"
+  // Beyond subsetting ES8, this grammar also includes the infix "!"
   // (eventually) operator from Dr.SES
   // http://research.google.com/pubs/pub40673.html
 
@@ -153,6 +152,10 @@ module.exports = (function() {
 
 
   const tinyses = bnf`
+
+    # The start production includes scripts, modules, and function
+    # bodies. Does it therefore include Node modules? I think so.
+    # Distinctions between these three would be post-parsing.
     # TODO: module syntax
     start ::= body EOF                                     ${(b,_) => (..._) => ['script', b]};
 
@@ -165,33 +168,47 @@ module.exports = (function() {
     QUASI_MID ::= ${() => FAIL};
     QUASI_TAIL ::= ${() => FAIL};
 
-    # Omit "arguments" and "eval" from IDENT in TinySES.
+    # Omit "async", "arguments", and "eval" from IDENT in TinySES even
+    # though ES8 considers them in IDENT.
     RESERVED_WORD ::=
-      KEYWORD / ES6_ONLY_KEYWORD / FUTURE_RESERVED_WORD
-    / "arguments" / "eval";
+      KEYWORD / ES8_ONLY_KEYWORD / FUTURE_RESERVED_WORD
+    / "null" / "false" / "true"
+    / "async" / "arguments" / "eval";
 
     KEYWORD ::=
-      "null" / "false" / "true"
-    / "break" / "case" / "catch" / "const"
+      "break"
+    / "case" / "catch" / "const" / "continue"
     / "debugger" / "default"
-    / "else" / "export" / "finally"
-    / "for" / "if" / "import"
-    / "return" / "switch" / "throw" / "try"
-    / "typeof" / "void" / "while";
+    / "else" / "export"
+    / "finally" / "for"
+    / "if" / "import"
+    / "return"
+    / "switch"
+    / "throw" / "try" / "typeof"
+    / "void"
+    / "while";
 
-    # Unused by TinySES but enumerated these anyway, in order to
-    # omit them from the IDENT token.
-    ES6_ONLY_KEYWORD ::=
-      "class" / "continue" / "delete" / "do" / "extends"
-    / "function" / "in" / "instanceof" / "new" / "super"
-    / "this" / "var" / "with" / "yield";
+    # Unused by TinySES but enumerated here, in order to omit them
+    # from the IDENT token.
+    ES8_ONLY_KEYWORD ::=
+      "class"
+    / "delete" / "do"
+    / "extends"
+    / "function"
+    / "in" / "instanceof"
+    / "new"
+    / "super"
+    / "this"
+    / "var"
+    / "with"
+    / "yield";
 
     FUTURE_RESERVED_WORD ::=
-      "enum" / "await"
-    / "implements" / "interface" / "package"
-    / "private" / "protected" / "public";
+      "await" / "enum"
+    / "implements" / "package" / "protected"
+    / "interface" / "private" / "public";
 
-    dataLiteral ::=  NUMBER / STRING / "null" / "false" / "true";
+    dataLiteral ::=  "null" / "false" / "true" / NUMBER / STRING;
 
     identName ::= IDENT / RESERVED_WORD;
     useVar ::= IDENT                                       ${id => ['use',id]};
@@ -204,6 +221,7 @@ module.exports = (function() {
       dataLiteral                                          ${n => ['data',JSON.parse(n)]}
     / "[" arg ** "," "]"                                   ${(_,es,_2) => ['array',es]}
     / "{" prop ** "," "}"                                  ${(_,ps,_2) => ['object',ps]}
+    / functionExpr
     / quasiExpr
     / "(" expr ")"                                         ${(_,e,_2) => e}
     / useVar
@@ -229,6 +247,7 @@ module.exports = (function() {
     prop ::=
       "..." expr                                           ${(_,e) => ['spreadObj',e]}
     / propName ":" expr                                    ${(k,_,e) => ['prop',k,e]}
+    / methodDef
     / IDENT                                                ${id => ['prop',id,id]};
 
     propParam ::=
@@ -248,6 +267,7 @@ module.exports = (function() {
 
     # No "new", "super", or MetaProperty. Without "new" we don't need
     # separate MemberExpr and CallExpr productions.
+    # Recognize b!foo(x) as distinct from calling b!foo post-parse
     postExpr ::= primaryExpr postOp*                       ${binary};
     postOp ::=
       "." identName                                        ${(_,id) => ['get',id]}
@@ -265,15 +285,18 @@ module.exports = (function() {
     / postExpr;
 
     # No prefix or postfix "++" or "--".
+    # No "delete". No bitwise "~".
     preOp ::= "void" / "typeof" / "+" / "-" / "!";
 
     # Restrict index access to number-names, including
     # floating point, NaN, Infinity, and -Infinity.
     indexExpr ::= "+" preExpr                              ${(op,e) => [op,e]};
 
-    # No bitwise operators, "instanceof", or "in".  Unlike ES6, none
-    # of the relational operators associate. To help readers, mixing
-    # relational operators always requires explicit parens.
+    # No bitwise operators, "instanceof", "in", "==", or "!=".  Unlike
+    # ES8, none of the relational operators (including equality)
+    # associate. To help readers, mixing relational operators always
+    # requires explicit parens.
+    # TODO: exponentiation "**" operator.
     multExpr ::= preExpr (("*" / "/" / "%") preExpr)*      ${binary};
     addExpr ::= multExpr (("+" / "-") multExpr)*           ${binary};
     relExpr ::= addExpr (relOp addExpr)?                   ${binary};
@@ -314,10 +337,9 @@ module.exports = (function() {
       IDENT                                                ${id => [['def',id]]}
     / "(" param ** "," ")"                                 ${(_,ps,_2) => ps};
 
-    # No "var", empty statement, "continue", "with", "do/while",
-    # "for/in", or labelled statement. None of the insane variations
-    # of "for". Only blocks are accepted for flow-of-control
-    # statements.
+    # No "var", empty statement, "with", "do/while", or "for/in". None
+    # of the insane variations of "for". Only blocks are accepted for
+    # flow-of-control statements.
     # The expr production must go last, so PEG's prioritized choice will
     # interpret {} as a block rather than an expression.
     statement ::=
@@ -327,20 +349,23 @@ module.exports = (function() {
     / "for" "(" declaration expr? ";" expr? ")" block      ${(_,_2,d,c,_3,i,_4,b) => ['for',d,c,i,b]}
     / "for" "(" declOp binding "of" expr ")" block         ${(_,_2,d,_3,e,_4,b) => ['forOf',d,e,b]}
     / "while" "(" expr ")" block                           ${(_,_2,c,_3,b) => ['while',c,b]}
+    / "switch" "(" expr ")" "{" branch* "}"                ${(_,_2,e,_3,_4,bs,_5) => ['switch',e,bs]}
+    / IDENT ":" statement                                  ${(label,_,stat) => ['label',label,stat]}
     / "try" block catcher finalizer                        ${(_,b,c,f) => ['try',b,c,f]}
     / "try" block finalizer                                ${(_,b,f) => ['try',b,f]}
     / "try" block catcher                                  ${(_,b,c) => ['try',b,c]}
-    / "switch" "(" expr ")" "{" branch* "}"                ${(_,_2,e,_3,_4,bs,_5) => ['switch',e,bs]}
     / terminator
     / "debugger" ";"                                       ${(_,_2) => ['debugger']}
     / expr ";"                                             ${(e,_) => e};
 
-    # Each case branch must end in a terminating statement. No
-    # labelled break.
+    # Each case branch must end in a terminating statement.
     terminator ::=
       "return" NO_NEWLINE expr ";"                         ${(_,_2,e,_3) => ['return',e]}
     / "return" ";"                                         ${(_,_2) => ['return']}
+    / "break" NO_NEWLINE IDENT ";"                         ${(_,_2,label,_3) => ['break',label]}
     / "break" ";"                                          ${(_,_2) => ['break']}
+    / "continue" NO_NEWLINE IDENT ";"                      ${(_,_2,label,_3) => ['continue',label]}
+    / "continue" ";"                                       ${(_,_2) => ['continue']}
     / "throw" expr ";"                                     ${(_,e,_2) => ['throw',e]};
 
     # no "function", generator, or "class" declaration.
