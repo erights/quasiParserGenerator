@@ -4,12 +4,11 @@
 module.exports = (function(){
   "use strict";
 
-  const {def} = require('./sesshim.es6');
+  const {def} = require('./sesshim.js');
   const {FAIL, EOF,
     SPACE_RE, NUMBER_RE, STRING_RE, IDENT_RE,
-    LINE_COMMENT_RE, stickyRE,
-    Pos, Packratter} = require('./scanner.es6');
-  const {quasifyParser, bnf} = require('./bootbnf.es6');
+    LINE_COMMENT_RE, stickyRE, Packratter} = require('./scanner.js');
+  const {quasifyParser, bnf} = require('./bootbnf.js');
 
   /**
    * The base Parser class for parser traits to extend in order to

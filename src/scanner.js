@@ -3,9 +3,9 @@
 
 module.exports = (function(){
   "use strict";
-
-  const {def} = require('./sesshim.es6');
-  const {re} = require('./qregexp.es6');
+  
+  const {def} = require('./sesshim.js');
+  const {re} = require('./qregexp.js');
 
   const FAIL = def({toString: () => 'FAIL'});
   const EOF = def({toString: () => 'EOF'});

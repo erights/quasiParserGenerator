@@ -4,10 +4,10 @@
 module.exports = (function(){
   "use strict";
 
-  const {def} = require('../src/sesshim.es6');
-  const {Packratter} = require('../src/scanner.es6');
-  const {bnf, metaCompile, doBnf} = require('../src/bootbnf.es6');
-  const {scannerless} = require('../src/scannerless.es6');
+  const {def} = require('../src/sesshim.js');
+  const {Packratter} = require('../src/scanner.js');
+  const {bnf, metaCompile, doBnf} = require('../src/bootbnf.js');
+  const {scannerless} = require('../src/scannerless.js');
 
   function doArith(bnfParam) {
     return bnfParam`
