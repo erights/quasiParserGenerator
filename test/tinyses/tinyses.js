@@ -141,11 +141,15 @@ module.exports = (function() {
   // What else can Standalone TinySES omit from the SES standard
   // library?
 
-  // Open question: Can Standalone TinySES with automated tamper
+  // Open type questions: Can Standalone TinySES with automated tamper
   // proofing be soundly statically typed with a structural type
   // system? What about trademarks/nominal-types and auditors? How
   // would this map to the wasm type system which does tag checking
-  // but no deep parameterized type checking?
+  // but no deep parameterized type checking?  If static checking
+  // makes sense, should we add some of TypeScript's or Flow's syntax
+  // for optional type declarations?  Given function types (parameter
+  // and return value), can the rest generally be inferred? How would
+  // these types play with the Cap'n Proto types?
 
 
   const tinyses = bnf`
