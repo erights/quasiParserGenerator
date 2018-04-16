@@ -229,8 +229,8 @@ record, looking it up by name and immediately calling it:
 record.field(args)
 ```
 
-This would still give SES function access to the record as its `this`
-argument.
+This would still give the SES function access to the record as its
+`this` argument.
 
 
 ## Caveats
