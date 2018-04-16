@@ -59,7 +59,7 @@ programs as possible while staying within ocap rules.
 **TinySES** is a static, absorbed subset of SES. TinySES approximates
 the smallest useful subset of SES that is still pleasant to
 program in using the objects-as-closures pattern. TinySES omits
-"this" and classes. Once initialized, the API surface of a TinySES
+`this` and classes. Once initialized, the API surface of a TinySES
 object must be tamper-proofed before exposure to clients.
 TinySES is not intended to run legacy code or code that uses
 inheritance.
