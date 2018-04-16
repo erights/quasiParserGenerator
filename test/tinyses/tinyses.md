@@ -50,7 +50,7 @@ primordials, so mutations that would succeed in ES2017-strict might
 instead throw a `TypeError` in SES.  SES restricts the global scope,
 so attempts to dereference a variable named, for example, `document`
 that might succeed in ES2017-strict on a given host might instead
-throw a `ReferenceError` in within a SES environment run on that host.
+throw a `ReferenceError` within a SES environment run on that host.
 
 SES is the largest subset of ES2017-strict which is still an ocap
 language. Its purpose is to run as many conventional EcmaScript
