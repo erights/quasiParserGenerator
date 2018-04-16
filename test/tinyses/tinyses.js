@@ -204,6 +204,9 @@ module.exports = (function() {
     # non-number-named properties.
     # Syntactically disallow ("delete" IDENT).
     # No pseudo-pattern lValues.
+    # TODO: re-allow assignment to statically named fields,
+    # since it is useful during initialization and prevented
+    # thereafter by mandatory tamper-proofing.
     lValue ::= elementExpr / useVar;
 
     elementExpr ::=
