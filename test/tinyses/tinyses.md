@@ -9,7 +9,9 @@ TinySES is a small safe ocap subset of JavaScript that
    * non-experts can use to write non-trivial non-exploitable
      smart contracts,
 
-##  Subsetting EcmaScript 2017
+##  Subsetting EcmaScript
+
+Unless stated otherwise, all references to EcmaScript refer to EcmaScript 2017, the eighth edition of the standard.
 
 One language is a *static subset* (<S) of another if every program
 statically accepted by the smaller language is also statically
