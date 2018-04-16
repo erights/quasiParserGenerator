@@ -30,6 +30,8 @@ modification, but not an *internal modification*.)  A smaller language
 which is not absorbed may often be *transpiled* (<T) into the larger
 language by source-to-source transformation.
 
+![EcmaScript subsets Venn diagram](ecmascript-subsets.png "EcmaScript subsets Venn diagram")
+
 **JSON** <SA **TinySES** <SA **SES** <DA **ES2017-strict** <SDA
   **ES2017**
 
