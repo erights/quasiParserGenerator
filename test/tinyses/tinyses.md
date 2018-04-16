@@ -80,7 +80,7 @@ interpreted) easily and with high confidence.
 
 **JSON** is a static, absorbed subset of all the languages above.
 
-**JSON** is popular as a safe interchange format for data. Each
+JSON is popular as a safe interchange format for data. Each
 language that accepts JSON has its own JSON parser and "compiler" for
 turning parsed data into data that this language can process. SES and
 TinySES are interchange formats for data and behavior, i.e., safe
