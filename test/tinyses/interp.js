@@ -1,9 +1,10 @@
-/*global module require Q tinyses */
+/*global module require Q */
 
 module.exports = (function() {
   "use strict";
 
   const {def} = require('../../src/sesshim.js');
+  const {tinyses} = require('./tinyses.js');
 
   class Panic extends Error {}
 
