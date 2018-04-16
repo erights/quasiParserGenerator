@@ -7,7 +7,7 @@ TinySES is a small safe ocap subset of JavaScript that
    * is amenable to a range of static analysis,
    * omits most of JavaScript's bad parts,
    * non-experts can use to write non-trivial non-exploitable
-     smart contracts, 
+     smart contracts,
 
 ##  Subsetting EcmaScript 2017
 
@@ -141,11 +141,11 @@ cover grammar.
 TinySES array literals omit elision (i.e., nothing between
 commas).
 
-TinySES treats `arguments` and `eval` as reserved keywords.  Strict
-mode already limits `arguments` and `eval` to the point that they are
-effectively keywords in strict code.  TinySES does include ellipses
-`...` both as rest and spread, which provides the useful functionality
-of `arguments` with less confusion. 
+TinySES treats `async`, `arguments`, and `eval` as reserved keywords.
+Strict mode already limits `arguments` and `eval` to the point that
+they are effectively keywords in strict code.  TinySES does include
+ellipses `...` both as rest and spread, which provides the useful
+functionality of `arguments` with less confusion.
 
 TinySES omits computed property names. TinySES has syntax for
 mutating only number-named properties, which include floating
@@ -165,6 +165,20 @@ analyzability. However, TinySES will continue to omit `this` as the
 central defining difference between SES and TinySES. TinySES will
 therefore continue to omit `class` as well.
 
+The TinySES `switch` statement grammar requires that all cases be
+terminated by a terminating statement, `return`, `break`, `continue`
+or `throw`, avoiding a perpetually annoying hazard of C-like
+languages.
+
+All control-flow branches, including `switch` cases, must be blocks,
+not naked statements, avoiding hazards and giving each branch its own
+lexical block scope.
+
+TinySES has no for/in statememt, and so does not inherit the
+non-determinism regarding property modification during for/in
+enumeration. Everything useful about for/in is still available by
+reflection but without this non-determinism issue.
+
 
 ## Additional Static Restrictions of TinySES
 
@@ -178,6 +192,45 @@ although we may support it based on future versions that support
 Realms and Frozen Realms. So that this future repair of TinySES does
 not break old programs, TinySES excludes expressions in the static
 form of direct eval.
+
+SES can create objects whose API surface is not tamper-proofed and
+expose these to clients. This is easy to do accidentally, and
+hazardous when it happens. Even if the object was designed to be
+directly mutated by its clients, and client may freeze the object,
+preventing other clients from directly mutating it. To help the
+TinySES programmer avoid these hazards, all objects made by literal
+expressions (object literals, array literals, the many forms of
+function literals) must be tamper-proofed with `def` before it can
+escape from its static context of origin. Thus, direct mutation can
+still be used to prepare an object for release. Use of `def` then
+marks the object as being ready for use by its clients.
+
+Looking up a function in an array and calling it would naturally be
+coded as
+
+```js
+array[i](arg)
+```
+
+However, if the called function were written in SES it could use
+`this` to capture the array itself. To protect against this, TinySES
+statically rejects this call, forcing the programmer to write instead
+something like
+
+```js
+(1,array[i])(arg)
+```
+
+which is safe. However, the TinySES programmer might still encounter
+this hazard if storing a SES function on a named field of a
+record, looking it up by name and immediately calling it:
+
+```js
+record.field(args)
+```
+
+This would still give SES function access to the record as its `this`
+argument.
 
 
 ## Caveats
@@ -202,6 +255,30 @@ objects. Thus, SES and TinySES are technically not subsets of
 ES2017-strict for programs using reflection, since these differences
 are detectable by means other than errors.
 
+Arrow functions and concise methods have a [[Call]] behavior and no
+[[Construct]] behavior, preventing them from being called as a
+constructor, such as with `new`. However, TinySES `function` functions
+can be called in this manner. Without `this` it is hard to see how
+this could confuse a `function` function, but I am not yet confident
+that this does not produce a hazard.
+
+We need to add `new` back into the TinySES grammar.
+
+Should we add the bitwise operators back into the TinySES grammar?
+There's little hazard here.
+
+Should we add do/while back into the TinySES grammar? There's no
+hazard here. We omitted it just for minimalism.
+
+We will probably add `async`/`await` functions back in. There is some
+hazard here, but probably less that trying to do without them. Can
+better static analysis help avoid stateful hazards at `await` points?
+
+What about generators or async iterators?
+
+We will add BigInt to TinySES, even though it will only be in
+EcmaScript well after ES2017.
+
 
 ## Open Questions
 
@@ -220,4 +297,3 @@ without implicit runtime checks, but we have not yet investigated
 this. The distributed messages of **Tiny Dr.SES** are likely to be
 typed, hopefully using the same type system, so that **Typed Tiny
 Dr.SES** will be straightforward.
-

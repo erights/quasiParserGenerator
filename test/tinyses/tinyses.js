@@ -68,6 +68,7 @@ module.exports = (function() {
 
     # Unused by TinySES but enumerated here, in order to omit them
     # from the IDENT token.
+    # TODO: Should add "new" back into TinySES.
     RESERVED_KEYWORD ::=
       "class"
     / "delete" / "do"
@@ -91,10 +92,11 @@ module.exports = (function() {
     useVar ::= IDENT                                       ${id => ['use',id]};
     defVar ::= IDENT                                       ${id => ['def',id]}
 
-    # For most identifiers that ES2017 treats as IDENT but recognized
-    # as pseudo-keywords in a context manner, TinySES simply makes
+    # For most identifiers that ES2017 treats as IDENT but recognizes
+    # as pseudo-keywords in a context dependent manner, TinySES simply makes
     # keywords. However, this would be too painful for "get" and
-    # "set", so instead we use our support syntactic predicates.
+    # "set", so instead we use our parser-generator's support syntactic
+    # predicates. TODO: Is it really too painful? Try it.
     identGet ::= IDENT                                     ${id => (id === "get" ? id : FAIL)};
     identSet ::= IDENT                                     ${id => (id === "set" ? id : FAIL)};
 
@@ -126,7 +128,6 @@ module.exports = (function() {
     / defVar "=" expr                                      ${(v,_,e) => ['optional',v,e]}
     / pattern;
 
-    # No method definition.
     prop ::=
       "..." expr                                           ${(_,e) => ['spreadObj',e]}
     / propName ":" expr                                    ${(k,_,e) => ['prop',k,e]}
@@ -150,7 +151,8 @@ module.exports = (function() {
 
     # No "new", "super", or MetaProperty. Without "new" we don't need
     # separate MemberExpr and CallExpr productions.
-    # Recognize b!foo(x) as distinct from calling b!foo post-parse
+    # Recognize b!foo(x) as distinct from calling b!foo post-parse.
+    # TODO: Should add "new" back into TinySES.
     postExpr ::= primaryExpr postOp*                       ${binary};
     postOp ::=
       "." identName                                        ${(_,id) => ['get',id]}
@@ -189,6 +191,9 @@ module.exports = (function() {
 
     # No trinary ("?:") expression
     # No comma expression, so assignment expression is expr.
+    # TODO: Need to be able to write (1,array[i])(args), which
+    # either requires that we readmit the comma expression, or
+    # that we add a weird special case to the grammar.
     expr ::=
       lValue assignOp expr                                 ${(lv,op,rv) => [op,lv,rv]}
     / arrow
@@ -281,8 +286,8 @@ module.exports = (function() {
       "function" defVar "(" params ")" block           ${(_,n,_2,p,_3,b) => ['functionDecl',n,p,b]};
     methodDef
       propName "(" params ")" block                    ${(n,_,p,_2,b) => ['methodDef',n,p,b]}
-    \ identGet propName "(" ")" block                  ${(_,n,_2,_3,b) => ['getter',n,[],b]}
-    \ identSet propName "(" param ")" block            ${(_,n,_2,p,_3,b) => ['setter',n,[p],b]};
+    / identGet propName "(" ")" block                  ${(_,n,_2,_3,b) => ['getter',n,[],b]}
+    / identSet propName "(" param ")" block            ${(_,n,_2,p,_3,b) => ['setter',n,[p],b]};
 
   `;
 
