@@ -125,7 +125,7 @@ the middle " }...${ ", and `QUASI_TAIL` the end " }...\` ". The
 reason these are difficult is that a close curly "}" during a hole only
 terminates the hole if it is balanced.  TODO: All these
 placeholders currently fail. There is not yet the logic needed to
-tell whether a close curly terminates a whole.
+tell whether a close curly terminates a hole.
 
 Outside the lexical grammar, other differences from [ECMAScript 2017
 Grammar
