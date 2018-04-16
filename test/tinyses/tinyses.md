@@ -35,7 +35,7 @@ language by source-to-source transformation.
 <p align="center"><b>JSON</b> &lt;SA <b>TinySES</b> &lt;SA <b>SES</b>
   &lt;DA <b>ES-strict</b> &lt;SDA <b>EcmaScript</b></p>
 
-Each step needs to be explained. Proceeding from right to left.
+Each step needs to be explained. Proceeding from larger to smaller.
 
 **EcmaScript** EcmaScript code may be in either strict code or sloppy
 code, so the **ES-strict** sublanguage is a static, dynamic,
