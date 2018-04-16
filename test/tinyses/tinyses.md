@@ -36,7 +36,7 @@ language by source-to-source transformation.
 Each step needs to be explained. Proceeding from right to left.
 
 **ES2017** EcmaScript code may be in either strict code or sloppy
-code, so the ES2017-strict sublanguage is a static, dynamic,
+code, so the **ES2017-strict** sublanguage is a static, dynamic,
 absorbed subset of full EcmaScript by definition. (Historically, the
 strict sublanguage started by approximating a static and dynamic
 subset of the sloppy language, excluding `with` and throwing errors
