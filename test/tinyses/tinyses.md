@@ -32,29 +32,29 @@ language by source-to-source transformation.
 
 ![EcmaScript subsets Venn diagram](ecmascript-subsets.png "EcmaScript subsets Venn diagram")
 
-**JSON** <SA **TinySES** <SA **SES** <DA **ES2017-strict** <SDA
-  **ES2017**
+<p align="center">**JSON** <SA **TinySES** <SA **SES** <DA **ES-strict** <SDA
+  **EcmaScript**</p>
 
 Each step needs to be explained. Proceeding from right to left.
 
-**ES2017** EcmaScript code may be in either strict code or sloppy
-code, so the **ES2017-strict** sublanguage is a static, dynamic,
+**EcmaScript** EcmaScript code may be in either strict code or sloppy
+code, so the **ES-strict** sublanguage is a static, dynamic,
 absorbed subset of full EcmaScript by definition. (Historically, the
 strict sublanguage started by approximating a static and dynamic
 subset of the sloppy language, excluding `with` and throwing errors
 where the sloppy language would instead silently act insane. But this
 approximation has too many exceptions to remain useful.)
 
-**SES** is a dynamic, absorbed subset of ES2017-strict. SES
-statically accepts all programs accepted by ES2017-strict and can run
-on ES2017-strict without internal modification.  SES freezes the
-primordials, so mutations that would succeed in ES2017-strict might
+**SES** is a dynamic, absorbed subset of ES-strict. SES
+statically accepts all programs accepted by ES-strict and can run
+on ES-strict without internal modification.  SES freezes the
+primordials, so mutations that would succeed in ES-strict might
 instead throw a `TypeError` in SES.  SES restricts the global scope,
 so attempts to dereference a variable named, for example, `document`
-that might succeed in ES2017-strict on a given host might instead
+that might succeed in ES-strict on a given host might instead
 throw a `ReferenceError` within a SES environment run on that host.
 
-SES is the largest subset of ES2017-strict which is still an ocap
+SES is the largest subset of ES-strict which is still an ocap
 language. Its purpose is to run as many conventional EcmaScript
 programs as possible while staying within ocap rules.
 
@@ -95,9 +95,9 @@ Summary](http://www.ecma-international.org/ecma-262/8.0/#sec-grammar-summary).
 Unlike the Ecma page, lexical productions in the TinySES grammar are
 named in all upper case.
 
-Unlike ES2017 and SES, TinySES has no semicolon insertion, and so
+Unlike EcmaScript and SES, TinySES has no semicolon insertion, and so
 does not need a parser able to handle that. However, TinySES must
-impose the `NO_NEWLINE` constraints from ES2017, so that every
+impose the `NO_NEWLINE` constraints from EcmaScript, so that every
 non-rejected TinySES program is accepted as the same SES
 program. `NO_NEWLINE` is a lexical-level placeholder that must
 never consume anything. It should fail if the whitespace to skip
@@ -111,7 +111,7 @@ semicolon insertion, our lexical grammar avoids the context dependence
 that are most difficult for JavaScript lexers.
 
 In TinySES, all reserved words are unconditionally reserved. By
-contrast, in ES2017 and SES, `yield`, `await`, `implements`, etc are
+contrast, in EcmaScript and SES, `yield`, `await`, `implements`, etc are
 conditionally reserved. Thus we avoid the need for parameterized
 lexical-level productions.
 
@@ -189,7 +189,7 @@ The following static restrictions are specified as if they occur
 post-parsing, by analyzing the abstract syntax tree.
 
 The EcmaScript-strict `eval` can be used for both direct and indirect
-eval. SES and TinySES as absorbed into ES2017 has no direct eval,
+eval. SES and TinySES as absorbed into EcmaScript has no direct eval,
 although we may support it based on future versions that support
 Realms and Frozen Realms. So that this future repair of TinySES does
 not break old programs, TinySES excludes expressions in the syntactic
@@ -238,13 +238,13 @@ This would still give the SES function access to the record as its
 ## Caveats
 
 
-ES2017-strict does not include the `import` expression or the
+ES-strict does not include the `import` expression or the
 `import.meta` expression. Once ES20xx-strict does include these, SES
 must either exclude these by becoming a static subset, or it must
 restrict their semantics, require transpilation if embedded into the
 full language. Either embedding requires a full parse.
 
-Beyond subsetting ES2017, this grammar also includes the infix bang
+Beyond subsetting EcmaScript, this grammar also includes the infix bang
 `!` (eventually) operator from Dr.SES. We hope infix bang `!` will
 become part of the standard EcmaScript grammar. But until then, infix
 bang `!` trivially transpiles into calls to the Dr.SES extended
@@ -254,7 +254,7 @@ JavaScript](http://research.google.com/pubs/pub40673.html).
 Freezing the primordials does more that just turn non-errors into
 errors. It also changes how reflection describes these properties and
 objects. Thus, SES and TinySES are technically not subsets of
-ES2017-strict for programs using reflection, since these differences
+ES-strict for programs using reflection, since these differences
 are detectable by means other than errors.
 
 Arrow functions and concise methods have a [[Call]] behavior and no
@@ -279,7 +279,7 @@ better static analysis help avoid stateful hazards at `await` points?
 What about generators or async iterators?
 
 We will add BigInt to TinySES, even though it will only be in
-EcmaScript well after ES2017.
+EcmaScript well after EcmaScript.
 
 
 ## Open Questions
