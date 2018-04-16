@@ -109,7 +109,7 @@ succeeds.
 TinySES omits the `RegularExpressionLiteral`, instead including the
 [`RegExp.make`](https://github.com/mikesamuel/regexp-make-js) template
 string tag. By omitting `RegularExpressionLiteral` and automatic
-semicolon insertion, our lexical grammar avoids the context dependence
+semicolon insertion, our lexical grammar avoids the context dependencies
 that are most difficult for JavaScript lexers.
 
 In TinySES, all reserved words are unconditionally reserved. By
