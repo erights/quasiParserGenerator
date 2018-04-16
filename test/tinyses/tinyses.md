@@ -283,7 +283,7 @@ What about generators or async iterators?
 We will add BigInt to TinySES, even though it will only be in
 EcmaScript well after EcmaScript.
 
-TODO: We must ensure that code containing "<!--" or "-->" that could be parsed as an html comment according to the EcmaScript Appendix B grammar is instead statically rejected. Otherwise the same source may parse differently on different platforms, or even as script vs module code on the same platform.
+TODO: We must ensure that code containing "&lt;!--" or "--&gt;" that could be parsed as an html comment according to the EcmaScript Appendix B grammar is instead statically rejected. Otherwise the same source may parse differently on different platforms, or even as script vs module code on the same platform.
 
 
 ## Open Questions
