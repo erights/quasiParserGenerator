@@ -190,7 +190,7 @@ The EcmaScript-strict `eval` can be used for both direct and indirect
 eval. SES and TinySES as absorbed into ES2017 has no direct eval,
 although we may support it based on future versions that support
 Realms and Frozen Realms. So that this future repair of TinySES does
-not break old programs, TinySES excludes expressions in the static
+not break old programs, TinySES excludes expressions in the syntactic
 form of direct eval.
 
 SES can create objects whose API surface is not tamper-proofed and
