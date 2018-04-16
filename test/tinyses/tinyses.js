@@ -221,7 +221,7 @@ module.exports = (function() {
     # No bitwise operators
     assignOp ::= "=" / "*=" / "/=" / "%=" / "+=" / "-=";
 
-    # The expr form must come after the block for, to make proper use
+    # The expr form must come after the block form, to make proper use
     # of PEG prioritized choice.
     arrow ::=
       params NO_NEWLINE "=>" block                         ${(ps,_,_2,b) => ['arrow',ps,b]}
