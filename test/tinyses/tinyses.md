@@ -32,8 +32,8 @@ language by source-to-source transformation.
 
 ![EcmaScript subsets Venn diagram](ecmascript-subsets.png "EcmaScript subsets Venn diagram")
 
-<p align="center">**JSON** &lt;SA **TinySES** &lt;SA **SES** &lt;DA **ES-strict** &lt;SDA
-  **EcmaScript**</p>
+<p align="center"><b>JSON</b> &lt;SA <b>TinySES</b> &lt;SA <b>SES</b>
+  &lt;DA <b>ES-strict</b> &lt;SDA <b>EcmaScript</b></p>
 
 Each step needs to be explained. Proceeding from right to left.
 
