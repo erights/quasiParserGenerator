@@ -196,7 +196,7 @@ form of direct eval.
 SES can create objects whose API surface is not tamper-proofed and
 expose these to clients. This is easy to do accidentally, and
 hazardous when it happens. Even if the object was designed to be
-directly mutated by its clients, and client may freeze the object,
+directly mutated by its clients, any client may freeze the object,
 preventing other clients from directly mutating it. To help the
 TinySES programmer avoid these hazards, all objects made by literal
 expressions (object literals, array literals, the many forms of
