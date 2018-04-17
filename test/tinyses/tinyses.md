@@ -1,5 +1,8 @@
 # TinySES
 
+***This document is an early draft. Comments appreciated! Thanks.***
+
+
 TinySES is a small safe ocap subset of JavaScript that
    * can easily run within a JavaScript system,
    * can be easily implemented for standalone use,
