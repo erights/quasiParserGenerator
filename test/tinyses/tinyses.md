@@ -11,7 +11,9 @@ TinySES is a small safe ocap subset of JavaScript that
 
 ##  Subsetting EcmaScript
 
-Unless stated otherwise, all references to EcmaScript refer to [EcmaScript 2017](http://www.ecma-international.org/ecma-262/8.0/), the eighth edition of the standard.
+Unless stated otherwise, all references to EcmaScript refer to
+[EcmaScript 2017](http://www.ecma-international.org/ecma-262/8.0/),
+the eighth edition of the standard.
 
 One language is a *static subset* (<S) of another if every program
 statically accepted by the smaller language is also statically
@@ -32,7 +34,8 @@ modification, but not an *internal modification*.)  A smaller language
 which is not absorbed may often be *transpiled* (<T) into the larger
 language by source-to-source transformation.
 
-![EcmaScript subsets Venn diagram](ecmascript-subsets.png "EcmaScript subsets Venn diagram")
+![EcmaScript subsets Venn diagram](ecmascript-subsets.png "EcmaScript
+ subsets Venn diagram")
 
 <p align="center"><b>JSON</b> &lt;SA <b>TinySES</b> &lt;SA <b>SES</b>
   &lt;DA <b>ES-strict</b> &lt;SDA <b>EcmaScript</b></p>
@@ -113,8 +116,8 @@ semicolon insertion, our lexical grammar avoids the context dependencies
 that are most difficult for JavaScript lexers.
 
 In TinySES, all reserved words are unconditionally reserved. By
-contrast, in EcmaScript and SES, `yield`, `await`, `implements`, etc are
-conditionally reserved. Thus we avoid the need for parameterized
+contrast, in EcmaScript and SES, `yield`, `await`, `implements`, etc
+are conditionally reserved. Thus we avoid the need for parameterized
 lexical-level productions.
 
 TinySES omits both the `in` expression and the for/in loop,
@@ -239,6 +242,7 @@ This would still give the SES function access to the record as its
 
 ## Caveats
 
+### Aniticipating future EcmaScript changes
 
 ES-strict does not include the `import` expression or the
 `import.meta` expression. Once ES20xx-strict does include these, SES
@@ -253,11 +257,18 @@ bang `!` trivially transpiles into calls to the Dr.SES extended
 promise API. See [Distributed Electronic Rights in
 JavaScript](http://research.google.com/pubs/pub40673.html).
 
+We will add BigInt to TinySES, even though it will only be in
+EcmaScript well after ES2017.
+
+### Exceptions to the subsetting claims
+
 Freezing the primordials does more that just turn non-errors into
 errors. It also changes how reflection describes these properties and
 objects. Thus, SES and TinySES are technically not subsets of
 ES-strict for programs using reflection, since these differences
 are detectable by means other than errors.
+
+### Remaining hazards
 
 Arrow functions and concise methods have a [[Call]] behavior and no
 [[Construct]] behavior, preventing them from being called as a
@@ -265,6 +276,8 @@ constructor, such as with `new`. However, TinySES `function` functions
 can be called in this manner. Without `this` it is hard to see how
 this could confuse a `function` function, but I am not yet confident
 that this does not produce a hazard.
+
+### Possible changes to current TinySES definition
 
 We need to add `new` back into the TinySES grammar.
 
@@ -280,10 +293,11 @@ better static analysis help avoid stateful hazards at `await` points?
 
 What about generators or async iterators?
 
-We will add BigInt to TinySES, even though it will only be in
-EcmaScript well after EcmaScript.
-
-TODO: We must ensure that code containing "&lt;!--" or "--&gt;" that could be parsed as an html comment according to the EcmaScript Appendix B grammar is instead statically rejected. Otherwise the same source may parse differently on different platforms, or even as script vs module code on the same platform.
+TODO: We must ensure that code containing "&lt;!--" or "--&gt;" that
+could be parsed as an html comment according to the EcmaScript
+Appendix B grammar is instead statically rejected. Otherwise the same
+source may parse differently on different platforms, or even as script
+vs module code on the same platform.
 
 
 ## Open Questions
