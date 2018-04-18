@@ -45,7 +45,7 @@ language by source-to-source transformation.
 
 Each step needs to be explained. Proceeding from larger to smaller.
 
-**EcmaScript** EcmaScript code may be in either strict mode or sloppy
+**EcmaScript** code may be in either strict mode or sloppy
 mode, so the **ES-strict** sublanguage is a static, dynamic,
 absorbed subset of full EcmaScript by definition. (Historically, the
 strict sublanguage started by approximating a static and dynamic
