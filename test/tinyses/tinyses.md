@@ -94,7 +94,7 @@ mobile code. TinySES is small enough to be easily implemented as a
 compiler or interpreter in a wide range of other languages.
 
 
-## TinySES as syntactic subset of SES
+## TinySES as a syntactic subset of SES
 
 
 The [TinySES grammar](tinyses.js) is based on the [ECMAScript 2017
