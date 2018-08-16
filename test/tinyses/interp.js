@@ -50,7 +50,14 @@ module.exports = (function() {
   }
 
   class DesugarVisitor extends ReplaceVisitor {
-    getLater(_, base, index) {
+    get(_, base, name) {
+      base = this.visitAst(base);
+      return ['index', base, ['data', name]];
+    }
+    getLater(_, base, name) {
+      return this.visitAst(['indexLater', base, ['data', name]]);
+    }
+    indexLater(_, base, index) {
       base = this.visitAst(base);
       index = this.visitAst(index);
       return tinyses`Q(${base}).get(${index})`;
@@ -63,18 +70,34 @@ module.exports = (function() {
     call(_, base, args) {
       args = this.visitAsts(args);
       if (Array.isArray(base)) {
-        if (base[0] === 'get') {
+        switch (base[0]) {
+        case 'get': {
+          const baseBase = this.visitAst(base[1]);
+          const name = base[2];
+          return ['mcall', baseBase, ['data', name], args];
+        }
+        case 'index': {
           const baseBase = this.visitAst(base[1]);
           const baseIndex = this.visitAst(base[2]);
           return ['mcall', baseBase, baseIndex, args];
-        } else if (base[0] === 'getLater') {
+        }
+        case 'getLater': {
+          const baseBase = this.visitAst(base[1]);
+          const name = base[2];
+          return tinyses`Q(${baseBase}).post(${['data', name]}, ...${args})`;
+        }
+        case 'indexLater': {
           const baseBase = this.visitAst(base[1]);
           const baseIndex = this.visitAst(base[2]);
           return tinyses`Q(${baseBase}).post(${baseIndex}, ...${args})`;
         }
+        default: {
+          base = this.visitAst(base);
+          return ['call', base, args];
+        }
+        }
       }
-      base = this.visitAst(base);
-      return ['call', base, args];
+      return null;  // just to silence eshint
     }
     // putLater, deleteLater
     // quasi, tag, tagLater
