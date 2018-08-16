@@ -1,3 +1,10 @@
+
+
+
+// Work on TinySES has moved to https://github.com/Agoric/TinySES
+
+
+
 // Options: --free-variable-checker --require --validate
 /*global module require*/
 

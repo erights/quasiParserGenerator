@@ -1,6 +1,6 @@
 # TinySES
 
-***This document is an early draft. Comments appreciated! Thanks.***
+***Work on TinySES has moved to [Agoric/TinySES](https://github.com/Agoric/TinySES)***
 
 
 TinySES is a small safe ocap subset of JavaScript that
