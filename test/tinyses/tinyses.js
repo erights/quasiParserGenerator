@@ -1,7 +1,7 @@
 // Options: --free-variable-checker --require --validate
 /*global module require*/
 
-// See https://github.com/erights/quasiParserGenerator/blob/master/test/tinyses/tinyses.md
+// See https://github.com/Agoric/TinySES/blob/master/README.md
 // for documentation of the TinySES grammar defined here.
 
 module.exports = (function() {
@@ -68,7 +68,6 @@ module.exports = (function() {
 
     # Unused by TinySES but enumerated here, in order to omit them
     # from the IDENT token.
-    # TODO: Should add "new" back into TinySES.
     RESERVED_KEYWORD ::=
       "class"
     / "delete" / "do"
@@ -152,7 +151,6 @@ module.exports = (function() {
     # No "new", "super", or MetaProperty. Without "new" we don't need
     # separate MemberExpr and CallExpr productions.
     # Recognize b!foo(x) as distinct from calling b!foo post-parse.
-    # TODO: Should add "new" back into TinySES.
     postExpr ::= primaryExpr postOp*                       ${binary};
     postOp ::=
       "." identName                                        ${(_,id) => ['get',id]}
@@ -215,7 +213,7 @@ module.exports = (function() {
 
     fieldExpr ::=
       primaryExpr "." identName                            ${(pe,_,id) => ['get',pe,id]}
-    / primaryExpr later "." identName                      ${(pe,_,_2,id) => ['getLater',pe,id]}
+    / primaryExpr later identName                          ${(pe,_,id) => ['getLater',pe,id]}
     / elementExpr;
 
     # No bitwise operators
@@ -224,9 +222,9 @@ module.exports = (function() {
     # The expr form must come after the block form, to make proper use
     # of PEG prioritized choice.
     arrow ::=
-      params NO_NEWLINE "=>" block                         ${(ps,_,_2,b) => ['arrow',ps,b]}
-    / params NO_NEWLINE "=>" expr                          ${(ps,_,_2,e) => ['lambda',ps,e]};
-    params ::=
+      arrowParams NO_NEWLINE "=>" block                    ${(ps,_,_2,b) => ['arrow',ps,b]}
+    / arrowParams NO_NEWLINE "=>" expr                     ${(ps,_,_2,e) => ['lambda',ps,e]};
+    arrowParams ::=
       IDENT                                                ${id => [['def',id]]}
     / "(" param ** "," ")"                                 ${(_,ps,_2) => ps};
 
@@ -261,8 +259,8 @@ module.exports = (function() {
     / "continue" ";"                                       ${(_,_2) => ['continue']}
     / "throw" expr ";"                                     ${(_,e,_2) => ['throw',e]};
 
-    # No generator or "class" declaration.
-    # No async function yet, but might get added.
+    # No "class" declaration.
+    # No generator, async, or async iterator function.
     declaration ::=
       declOp binding ** "," ";"                            ${(op,decls,_) => [op, decls]}
     / functionDecl;
@@ -284,13 +282,13 @@ module.exports = (function() {
 
 
     functionExpr ::=
-      "function" defVar? "(" params ")" block          ${(_,n,_2,p,_3,b) => ['functionExpr',n,p,b]};
+      "function" defVar? "(" param ** "," ")" block        ${(_,n,_2,p,_3,b) => ['functionExpr',n,p,b]};
     functionDecl ::=
-      "function" defVar "(" params ")" block           ${(_,n,_2,p,_3,b) => ['functionDecl',n,p,b]};
-    methodDef
-      propName "(" params ")" block                    ${(n,_,p,_2,b) => ['methodDef',n,p,b]}
-    / identGet propName "(" ")" block                  ${(_,n,_2,_3,b) => ['getter',n,[],b]}
-    / identSet propName "(" param ")" block            ${(_,n,_2,p,_3,b) => ['setter',n,[p],b]};
+      "function" defVar "(" param ** "," ")" block         ${(_,n,_2,p,_3,b) => ['functionDecl',n,p,b]};
+    methodDef ::=
+      propName "(" param ** "," ")" block                  ${(n,_,p,_2,b) => ['methodDef',n,p,b]}
+    / identGet propName "(" ")" block                      ${(_,n,_2,_3,b) => ['getter',n,[],b]}
+    / identSet propName "(" param ")" block                ${(_,n,_2,p,_3,b) => ['setter',n,[p],b]};
 
   `;
 
