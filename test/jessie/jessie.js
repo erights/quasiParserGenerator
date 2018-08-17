@@ -37,7 +37,8 @@ module.exports = (function() {
 
 
   const json = bnf`
-    start ::= primaryExpr EOF                              ${(v,_) => (..._) => v};
+    # to be overridden or inherited
+    start ::= expr EOF                                     ${(v,_) => (..._) => v};
 
     # to be extended
     primaryExpr ::=
@@ -66,8 +67,15 @@ module.exports = (function() {
   `;
 
 
+  // This language --- the decidable expr subset of jessie --- needs a better name.
+  const jsexpr = bnf.extends(json)`
+    start ::= super.start;
+  `;
+
+
   const jessie = bnf.extends(json)`
 
+    # Override rather than inherit jsexpr's start production.
     # The start production includes scripts, modules, and function
     # bodies. Does it therefore include Node modules? I think so.
     # Distinctions between these three would be post-parsing.
@@ -222,7 +230,7 @@ module.exports = (function() {
     andThenExpr ::= relExpr ("&&" relExpr)*                ${binary};
     orElseExpr ::= andThenExpr ("||" andThenExpr)*         ${binary};
 
-    # Overrides rather than extends json expr
+    # Override rather than extend json's expr production.
     # No trinary ("?:") expression
     # No comma expression, so assignment expression is expr.
     # TODO: Need to be able to write (1,array[i])(args), which
@@ -328,5 +336,5 @@ module.exports = (function() {
 
   `;
 
-  return def({json, jessie});
+  return def({json, jsexpr, jessie});
 }());
