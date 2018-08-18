@@ -1,15 +1,11 @@
-
-
-
-// Work on TinySES has moved to https://github.com/Agoric/TinySES
-
-
-
 // Options: --free-variable-checker --require --validate
 /*global module require*/
 
-// See https://github.com/Agoric/TinySES/blob/master/README.md
-// for documentation of the TinySES grammar defined here.
+// Subsets of JavaScript, starting from the grammar as defined at
+// http://www.ecma-international.org/ecma-262/9.0/#sec-grammar-summary
+
+// See https://github.com/Agoric/Jessie/blob/master/README.md
+// for documentation of the Jessie grammar defined here.
 
 module.exports = (function() {
   "use strict";
@@ -38,7 +34,7 @@ module.exports = (function() {
 
   const json = bnf`
     # to be overridden or inherited
-    start ::= expr EOF                                     ${(v,_) => (..._) => v};
+    start ::= assignExpr EOF                               ${(v,_) => (..._) => v};
 
     # to be extended
     primaryExpr ::=
@@ -49,49 +45,36 @@ module.exports = (function() {
 
     dataLiteral ::=  "null" / "false" / "true" / NUMBER / STRING;
 
-    array ::= "[" arg ** "," "]"                           ${(_,es,_2) => ['array',es]};
-
-    record ::= "{" prop ** "," "}"                         ${(_,ps,_2) => ['record',ps]};
+    array ::= "[" element ** "," "]"                       ${(_,es,_2) => ['array',es]};
 
     # to be extended
-    arg ::= expr;
+    element ::= assignExpr;
+
+    # The JavaScript and JSON grammars calls records "objects"
+    record ::= "{" propDef ** "," "}"                         ${(_,ps,_2) => ['record',ps]};
 
     # to be extended
-    prop ::= propName ":" expr                             ${(k,_,e) => ['prop',k,e]};
+    propDef ::= propName ":" assignExpr                       ${(k,_,e) => ['prop',k,e]};
 
     # to be extended
     propName ::= STRING;
 
-    # to be overridden rather than extended
-    expr ::= primaryExpr;
+    # to be overridden or extended
+    assignExpr ::= primExpr;
   `;
 
 
-  // This language --- the decidable expr subset of jessie --- needs a better name.
-  const jsexpr = bnf.extends(json)`
+  const jax = bnf.extends(json)`
     start ::= super.start;
-  `;
 
-
-  const jessie = bnf.extends(json)`
-
-    # Override rather than inherit jsexpr's start production.
-    # The start production includes scripts, modules, and function
-    # bodies. Does it therefore include Node modules? I think so.
-    # Distinctions between these three would be post-parsing.
-    # TODO: module syntax
-    start ::= body EOF                                     ${(b,_) => (..._) => ['script', b]};
+    # A.1 Lexical Grammar
 
     # TODO: Error if whitespace includes newline
     NO_NEWLINE ::= ;
 
-    # TODO: quasiliterals aka template literals
-    QUASI_ALL ::= ${() => FAIL};
-    QUASI_HEAD ::= ${() => FAIL};
-    QUASI_MID ::= ${() => FAIL};
-    QUASI_TAIL ::= ${() => FAIL};
+    IDENT_NAME ::= IDENT / RESERVED_WORD;
 
-    # Omit "async", "arguments", and "eval" from IDENT in TinySES even
+    # Omit "async", "arguments", and "eval" from IDENT in Jax even
     # though ES2017 considers them in IDENT.
     RESERVED_WORD ::=
       KEYWORD / RESERVED_KEYWORD / FUTURE_RESERVED_WORD
@@ -111,7 +94,7 @@ module.exports = (function() {
     / "void"
     / "while";
 
-    # Unused by TinySES but enumerated here, in order to omit them
+    # Unused by Jax but enumerated here, in order to omit them
     # from the IDENT token.
     RESERVED_KEYWORD ::=
       "class"
@@ -130,42 +113,182 @@ module.exports = (function() {
     / "implements" / "package" / "protected"
     / "interface" / "private" / "public";
 
+    # TODO: quasiliterals aka template literals
+    QUASI_ALL ::= ${() => FAIL};
+    QUASI_HEAD ::= ${() => FAIL};
+    QUASI_MID ::= ${() => FAIL};
+    QUASI_TAIL ::= ${() => FAIL};
 
-    identName ::= IDENT / RESERVED_WORD;
+
+    # A.2 Expressions
+
     useVar ::= IDENT                                       ${id => ['use',id]};
     defVar ::= IDENT                                       ${id => ['def',id]};
 
     # For most identifiers that ES2017 treats as IDENT but recognizes
-    # as pseudo-keywords in a context dependent manner, TinySES simply makes
+    # as pseudo-keywords in a context dependent manner, Jax simply makes
     # keywords. However, this would be too painful for "get" and
     # "set", so instead we use our parser-generator's support syntactic
     # predicates. TODO: Is it really too painful? Try it.
     identGet ::= IDENT                                     ${id => (id === "get" ? id : FAIL)};
     identSet ::= IDENT                                     ${id => (id === "set" ? id : FAIL)};
 
-    # TinySES primaryExpr does not include "this", ClassExpression,
-    # GeneratorExpression, or RegularExpressionLiteral.
     primaryExpr ::=
       super.primaryExpr
-    / functionExpr
     / quasiExpr
     / "(" expr ")"                                         ${(_,e,_2) => e}
     / useVar;
 
-    arg ::=
-      super.arg
-    / "..." expr                                           ${(_,e) => ['spread',e]};
+    element ::=
+      super.element
+    / "..." assignExpr                                     ${(_,e) => ['spread',e]};
 
-    prop ::=
-      super.prop
-    / "..." expr                                           ${(_,e) => ['spreadObj',e]}
-    / methodDef
-    / IDENT                                                ${id => ['prop',id,id]};
+    propDef ::=
+      super.propDef
+    / IDENT                                                ${id => ['prop',id,id]}
+    / "..." assignExpr                                     ${(_,e) => ['spreadObj',e]};
 
     # No computed property name
-    propName ::=  
+    propName ::=
       super.propName
-    / identName / NUMBER;
+    / IDENT_NAME
+    / NUMBER;
+    
+    quasiExpr ::=
+      QUASI_ALL                                            ${q => ['quasi',[q]]}
+    / QUASI_HEAD (expr (QUASI_MID expr)*)? QUASI_TAIL      ${(h,ms,t) => ['quasi',qunpack(h,ms,t)]};
+
+    # to be extended We only distinguish memberExpr from callExpr to
+    # accommodate sub-grammars that add "new". Without "new" these
+    # could be collapsed together.
+    memberExpr ::= primaryExpr memberPostOp*               ${binary};
+
+    # to be extended
+    memberPostOp ::=
+    / "[" indexExpr "]"                                    ${(_,e,_2) => ['index',e]}
+      "." IDENT_NAME                                       ${(_,id) => ['get',id]}
+    / quasiExpr                                            ${q => ['tag',q]};
+
+    # To be overridden rather than inherited.
+    # Introduced to impose a non-JS restriction
+    # Restrict index access to number-names, including
+    # floating point, NaN, Infinity, and -Infinity.
+    indexExpr ::= 
+      NUMBER                                               ${n => ['data',n]}
+    / "+" unaryExpr                                        ${(op,e) => [op,e]};
+
+    # to be extended
+    newExpr ::= memberExpr;
+
+    # to be extended
+    callExpr ::= memberExpr callPostOp+                    ${binary};
+
+    callPostOp ::=
+      memberPostOp
+    / args                                                 ${args => ['call',args]};
+
+    args ::= "(" arg ** "," ")"                            ${(_,args,_2) => args};
+
+    arg ::=
+      assignExpr
+    / "..." assignExpr                                     ${(_,e) => ['spread',e]};
+
+    # split from lvalue, which Jessie can restrict assignment.
+    # leftExpr remains purely to express predecence.
+    leftExpr ::=
+      newExpr
+    / callExpr;
+
+    # to be extended
+    updateExpr ::= leftExpr;
+
+    unaryExpr ::=
+      preOp unaryExpr                                      ${(op,e) => [op,e]}
+    / updateExpr;
+
+    # to be extended
+    # No prefix or postfix "++" or "--".
+    # No "delete". No bitwise "~".
+    preOp ::= "void" / "typeof" / "+" / "-" / "~" / "!";
+
+    # Different communities will think -x**y parses in different ways,
+    # so the EcmaScript grammar forces parens to disambiguate.
+    powExpr ::=
+      unaryExpr
+    / updateExpr "**" powExpr                              ${(x,op,y) => [op,x,y]};
+
+    multExpr ::= powExpr (multOp powExpr)*                 ${binary};
+    addExpr ::= multExpr (addOp multExpr)*                 ${binary};
+    shiftExpr ::= addExpr (shiftOp addExpr)*               ${binary};
+
+    # Non-standard, to be overridden
+    # In C-like languages, the precedence and associativity of the
+    # relational, equality, and bitwise operators is surprising, and
+    # therefore hazardous. Here, none of these associate with the
+    # others, forcing parens to disambiguate.
+    eagerExpr ::= addExpr (eagerOp addExpr)?               ${binary};
+
+    andThenExpr ::= eagerExpr ("&&" eagerExpr)*            ${binary};
+    orElseExpr ::= andThenExpr ("||" andThenExpr)*         ${binary};
+
+    multOp ::= "*" / "/" / "%";
+    addOp ::= "+" / "-";    
+    shiftOp ::= "<<" / ">>" / ">>>";
+    relOp ::= "<" / ">" / "<=" / ">=";
+    eqOp ::= "===" / "!==";
+    bitOp ::= "&" / "^" / "|";
+
+    eagerOp ::= relOp / eqOp / bitOp;
+
+    condExpr ::=
+      orElseExpr
+    / orElseExpr "?" assignExpr ":" assignExpr             ${(c,_,t,_2,e) => ['cond',c,t,e]};
+
+    # to be extended
+    assignExpr ::=
+      condExpr;
+
+    expr ::= assignExpr ("," assignExpr)*                  ${binary};
+  `;
+
+
+  const chainmail = bnf.extends(jax)`
+    # Override rather than inherit jax's start production.
+    start ::= body EOF                                     ${(b,_) => (..._) => ['script',b]};
+
+    # TODO
+    body ::=;
+  `;
+
+
+  const jessie = bnf.extends(jax)`
+
+    # Override rather than inherit jax's start production.
+    # The start production includes scripts, modules, and function
+    # bodies. Does it therefore include Node modules? I think so.
+    # Distinctions between these three would be post-parsing.
+    # TODO: module syntax
+    start ::= body EOF                                     ${(b,_) => (..._) => ['script',b]};
+
+
+    # A.1 Lexical Grammar
+
+    # For proposed eventual send expressions
+    LATER ::= NO_NEWLINE "!";
+
+
+    # A.2 Expressions
+
+    # Jessie primaryExpr does not include "this", ClassExpression,
+    # GeneratorExpression, AsyncFunctionExpression, 
+    # AsyncGenerarorExpression, or RegularExpressionLiteral.
+    primaryExpr ::=
+      super.primaryExpr
+    / functionExpr;
+
+    propDef ::=
+      super.propDef
+    / methodDef;
 
     pattern ::=
       dataLiteral                                          ${n => ['matchData',JSON.parse(n)]}
@@ -176,72 +299,38 @@ module.exports = (function() {
 
     param ::=
       "..." pattern                                        ${(_,p) => ['rest',p]}
-    / defVar "=" expr                                      ${(v,_,e) => ['optional',v,e]}
+    / defVar "=" assignExpr                                ${(v,_,e) => ['optional',v,e]}
     / pattern;
 
     propParam ::=
       "..." pattern                                        ${(_,p) => ['restObj',p]}
     / propName ":" pattern                                 ${(k,_,p) => ['matchProp',k,p]}
-    / IDENT "=" expr                                       ${(id,_,e) => ['optionalProp',id,id,e]}
+    / IDENT "=" assignExpr                                       ${(id,_,e) => ['optionalProp',id,id,e]}
     / IDENT                                                ${id => ['matchProp',id,id]};
 
-    quasiExpr ::=
-      QUASI_ALL                                            ${q => ['quasi',[q]]}
-    / QUASI_HEAD (expr (QUASI_MID expr)*)? QUASI_TAIL      ${(h,ms,t) => ['quasi',qunpack(h,ms,t)]};
+    # No "new", "super", or MetaProperty.
+    # Extend to recognize proposed eventual send syntax.
+    # After parsing distinguish b!foo(x) as distinct from calling b!foo.
+    memberPostOp ::=
+      super.memberPostOp
+    / LATER IDENT_NAME                                     ${(_,id) => ['getLater',id]}
+    / LATER "[" indexExpr "]"                              ${(_,_2,e,_3) => ['indexLater',e]}
+    / LATER args                                           ${(_,args) => ['callLater',args]};
 
-    later ::= NO_NEWLINE "!";
+    # to be extended
+    assignExpr ::=
+      super.assignExpr
+    / arrowFunc
+    / lValue ("=" / assignOp) assignExpr                   ${(lv,op,rv) => [op,lv,rv]};
 
-    # No "new", "super", or MetaProperty. Without "new" we don't need
-    # separate MemberExpr and CallExpr productions.
-    # Recognize b!foo(x) as distinct from calling b!foo post-parse.
-    postExpr ::= primaryExpr postOp*                       ${binary};
-    postOp ::=
-      "." identName                                        ${(_,id) => ['get',id]}
-    / "[" indexExpr "]"                                    ${(_,e,_2) => ['index',e]}
-    / "(" arg ** "," ")"                                   ${(_,args,_2) => ['call',args]}
-    / quasiExpr                                            ${q => ['tag',q]}
+    assignOp ::= 
+      "*=" / "/=" / "%=" / "+=" / "-="
+    / "<<=" / ">>=" / ">>>="
+    / "&=" / "^=" / "|="
+    / "**=";
 
-    / later identName                                      ${(_,id) => ['getLater',id]}
-    / later "[" indexExpr "]"                              ${(_,_2,e,_3) => ['indexLater',e]}
-    / later "(" arg ** "," ")"                             ${(_,_2,args,_3) => ['callLater',args]};
-
-    # Omit ("delete" fieldExpr) to avoid mutating properties
-    preExpr ::=
-      preOp preExpr                                        ${(op,e) => [op,e]}
-    / postExpr;
-
-    # No prefix or postfix "++" or "--".
-    # No "delete". No bitwise "~".
-    preOp ::= "void" / "typeof" / "+" / "-" / "!";
-
-    # Restrict index access to number-names, including
-    # floating point, NaN, Infinity, and -Infinity.
-    indexExpr ::= "+" preExpr                              ${(op,e) => [op,e]};
-
-    # No bitwise operators, "instanceof", "in", "==", or "!=".  Unlike
-    # ES8, none of the relational operators (including equality)
-    # associate. To help readers, mixing relational operators always
-    # requires explicit parens.
-    # TODO: exponentiation "**" operator.
-    multExpr ::= preExpr (("*" / "/" / "%") preExpr)*      ${binary};
-    addExpr ::= multExpr (("+" / "-") multExpr)*           ${binary};
-    relExpr ::= addExpr (relOp addExpr)?                   ${binary};
-    relOp ::= "<" / ">" / "<=" / ">=" / "===" / "!==";
-    andThenExpr ::= relExpr ("&&" relExpr)*                ${binary};
-    orElseExpr ::= andThenExpr ("||" andThenExpr)*         ${binary};
-
-    # Override rather than extend json's expr production.
-    # No trinary ("?:") expression
-    # No comma expression, so assignment expression is expr.
-    # TODO: Need to be able to write (1,array[i])(args), which
-    # either requires that we readmit the comma expression, or
-    # that we add a weird special case to the grammar.
-    expr ::=
-      lValue assignOp expr                                 ${(lv,op,rv) => [op,lv,rv]}
-    / arrow
-    / orElseExpr;
-
-    # lValue is only useVar or elementExpr in TinySES.
+    # to be overridden or extended
+    # lValue is only useVar or elementExpr in Jessie.
     # Include only elementExpr from fieldExpr to avoid mutating
     # non-number-named properties.
     # Syntactically disallow ("delete" IDENT).
@@ -253,24 +342,24 @@ module.exports = (function() {
 
     elementExpr ::=
       primaryExpr "[" indexExpr "]"                        ${(pe,_,e,_2) => ['index',pe,e]}
-    / primaryExpr later "[" indexExpr "]"                  ${(pe,_,_2,e,_3) => ['indexLater',pe,e]};
+    / primaryExpr LATER "[" indexExpr "]"                  ${(pe,_,_2,e,_3) => ['indexLater',pe,e]};
 
     fieldExpr ::=
-      primaryExpr "." identName                            ${(pe,_,id) => ['get',pe,id]}
-    / primaryExpr later identName                          ${(pe,_,id) => ['getLater',pe,id]}
+      primaryExpr "." IDENT_NAME                           ${(pe,_,id) => ['get',pe,id]}
+    / primaryExpr LATER IDENT_NAME                         ${(pe,_,id) => ['getLater',pe,id]}
     / elementExpr;
 
-    # No bitwise operators
-    assignOp ::= "=" / "*=" / "/=" / "%=" / "+=" / "-=";
-
-    # The expr form must come after the block form, to make proper use
+    # The assignExpr form must come after the block form, to make proper use
     # of PEG prioritized choice.
     arrow ::=
       arrowParams NO_NEWLINE "=>" block                    ${(ps,_,_2,b) => ['arrow',ps,b]}
-    / arrowParams NO_NEWLINE "=>" expr                     ${(ps,_,_2,e) => ['lambda',ps,e]};
+    / arrowParams NO_NEWLINE "=>" assignExpr               ${(ps,_,_2,e) => ['lambda',ps,e]};
     arrowParams ::=
       IDENT                                                ${id => [['def',id]]}
     / "(" param ** "," ")"                                 ${(_,ps,_2) => ps};
+
+
+    # A.3 Statements
 
     # No "var", empty statement, "with", "do/while", or "for/in". None
     # of the insane variations of "for". Only blocks are accepted for
@@ -306,22 +395,22 @@ module.exports = (function() {
     # No "class" declaration.
     # No generator, async, or async iterator function.
     declaration ::=
-      declOp binding ** "," ";"                            ${(op,decls,_) => [op, decls]}
+      declOp binding ** "," ";"                            ${(op,decls,_) => [op,decls]}
     / functionDecl;
 
     declOp ::= "const" / "let";
     # Initializer is mandatory
-    binding ::= pattern "=" expr                           ${(p,_,e) => ['bind', p, e]};
+    binding ::= pattern "=" assignExpr                           ${(p,_,e) => ['bind',p,e]};
 
     catcher ::= "catch" "(" pattern ")" block              ${(_,_2,p,_3,b) => ['catch',p,b]};
     finalizer ::= "finally" block                          ${(_,b) => ['finally',b]};
 
     branch ::= caseLabel+ "{" body terminator "}"          ${(cs,_,b,t,_2) => ['branch',cs,[...b,t]]};
     caseLabel ::=
-      "case" expr ":"                                      ${(_,e) => ['case', e]}
+      "case" expr ":"                                      ${(_,e) => ['case',e]}
     / "default" ":"                                        ${(_,_2) => ['default']};
 
-    block ::= "{" body "}"                                 ${(_,b,_2) => ['block', b]};
+    block ::= "{" body "}"                                 ${(_,b,_2) => ['block',b]};
     body ::= (statement / declaration)*;
 
 
@@ -336,5 +425,97 @@ module.exports = (function() {
 
   `;
 
-  return def({json, jsexpr, jessie});
+  // Joss is approximately JavaScript-strict, but with the lexical
+  // limitations of Jessie.  Joss exists mainly to record what
+  // elements of JavaScript were omitted from Jessie, in case we want
+  // to move them back in. Because we're using a PEG (parsing
+  // expression grammar) we do not need a cover grammar.
+  const joss = bnf.extends(jessie)`
+    start ::= super.start;
+
+
+    # A.1 Lexical Grammar
+
+    REGEXP ::= FAIL;
+
+
+    # A.2 Expressions
+
+    primaryExpr ::=
+      super.primaryExpr
+    / classExpr
+    / generatorExpr
+    / asyncFuncExpr
+    / asyncGeneratorExpr
+    / REGEXP;
+
+    element ::=
+      super.element
+    / ellision;
+
+    # empty
+    ellision ::=                                           ${_ => ['ellision']};
+
+    # TODO record trailing comma
+
+    propName ::=
+      super.propName
+    / "[" assignExpr "]"                                   ${(_,e,_2) => ['computed',e]};
+
+    memberExpr ::=
+      super.member
+    / superProp
+    / metaProp
+    / "new" memberExpr args                                ${(_,e,args) => ['newCall',e,args]};
+
+    # override rather than extend
+    indexExpr ::= expr;
+
+    superProp ::=
+      "super" "[" indexExpr "]"                            ${(_,_2,e,_3) => ['super',e]
+    / "super" "." IDENT_NAME;
+
+    metaProp ::= "new" "." "target"                        ${_ => ['newTarget']};
+
+    # override rather than extend
+    indexExpr ::= expr;
+
+    newExpr ::=
+      super.newExpr
+    / "new" newExpr                                        ${(_,e) => ['newCall',e,[]]};
+
+    callExpr ::=
+      super.callExpr
+    / "super" args                                         ${(_,args) => ['superCall',args]};
+
+    updateExpr ::=
+      super.updateExpr
+    / leftExpr NO_NEWLINE ("++" / "--")                    ${(e,_,op) => [`post${op}`,e]}
+    / ("++" / "--") unaryExpr                              ${(op,e) => [`pre${op}`,e]}
+
+    preOp ::=
+      super.preOp
+    / "delete" unaryExpr                                   ${(_,e) => ['delete',e]};
+
+    // override with standard
+    relExpr ::= addExpr (relOp addExpr)*                   ${binary};
+    eqExpr ::= relExpr (eqOp relExpr)*                     ${binary};
+    bitAndExpr ::= eqExpr ("&" eqExpr)*                    ${binary};
+    bitXorExpr ::= bitAndExpr ("^" bitAndExpr)*            ${binary};
+    bitOrExpr ::= bitXorExpr ("|" bitXorExpr)*             ${binary};
+
+    eagerExpr ::= bitOrExpr;
+
+    relOp ::= super.relOp / "in" / "instanceof";
+    eqOp ::= super.eqOp / "==" / "!==";
+
+    assignExpr ::=
+      super.assignExpr
+    / yieldExpr
+    / asyncArrowFunc;
+
+
+  `;
+
+  return def({json, jax, chainmail, jessie, joss});
 }());
