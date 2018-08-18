@@ -1,11 +1,11 @@
 // Options: --free-variable-checker --require --validate
 /*global module require*/
 
+const {def} = require('./sesshim.js');
+  
 module.exports = (function(){
   "use strict";
 
-  const {def} = require('./sesshim.js');
-  
   function indent(template, ...substs) {
     const result = [];
     let newnewline = '\n';
