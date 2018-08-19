@@ -96,22 +96,22 @@ module.exports = (function() {
     QUASI_TAIL ::= ${() => FAIL};
 
 
-    VAR_USE ::= IDENT                                      ${id => ['use',id]};
+    # A.2 Expressions
+
+    useVar ::= IDENT                                       ${id => ['use',id]};
 
     # Jax does not contain variable definitions, only uses. However,
     # multiple languages that extend Jax will contain defining
-    # occurrences of variable names, so we put the VAR_DEF production
+    # occurrences of variable names, so we put the defVar production
     # here.
-    VAR_DEF ::= IDENT                                      ${id => ['def',id]};
+    defVar ::= IDENT                                       ${id => ['def',id]};
 
-
-    # A.2 Expressions
 
     primaryExpr ::=
       super.primaryExpr
     / quasiExpr
     / "(" expr ")"                                         ${(_,e,_2) => e}
-    / VAR_USE;
+    / useVar;
 
     element ::=
       super.element
@@ -119,7 +119,7 @@ module.exports = (function() {
 
     propDef ::=
       super.propDef
-    / VAR_USE                                              ${id => ['prop',id,id]}
+    / useVar                                               ${id => ['prop',id,id]}
     / "..." assignExpr                                     ${(_,e) => ['spreadObj',e]};
 
     # No computed property name
