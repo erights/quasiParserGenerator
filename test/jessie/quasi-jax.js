@@ -40,7 +40,8 @@ module.exports = (function() {
   "use strict";
 
   const jax = bnf.extends(json)`
-    start ::= super.start;
+    # to be overridden or inherited
+    start ::= assignExpr EOF                               ${(v,_) => (..._) => v};
 
     # A.1 Lexical Grammar
 
@@ -98,7 +99,13 @@ module.exports = (function() {
     # A.2 Expressions
 
     useVar ::= IDENT                                       ${id => ['use',id]};
+
+    # Jax does not contain variable definitions, only uses. However,
+    # multiple languages that extend Jax will contain defining
+    # occurrences of variable names, so we put the defVar production
+    # here.
     defVar ::= IDENT                                       ${id => ['def',id]};
+
 
     # For most identifiers that ES2017 treats as IDENT but recognizes
     # as pseudo-keywords in a context dependent manner, Jax simply makes
@@ -150,7 +157,7 @@ module.exports = (function() {
     # primaryExpr and updateExpr jumps directly to callExpr.
 
     # to be overridden.
-    callExpr ::= primaryExpr callPostOp*                      ${binary};
+    callExpr ::= primaryExpr callPostOp*                   ${binary};
 
     # To be overridden rather than inherited.
     # Introduced to impose a non-JS restriction
@@ -214,6 +221,11 @@ module.exports = (function() {
     # to be extended
     assignExpr ::= condExpr;
 
+    # The comma expression is in Jax and Jessie merely to allow
+    # expressions like (1,base.name)(args), in order to avoid passing
+    # base as the this-binding to the function found at base.name.  We
+    # may even impose a post-parsing rule that prohibits any other
+    # usage in Jax and Jessie.
     expr ::= assignExpr ("," assignExpr)*                  ${binary};
   `;
 

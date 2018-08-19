@@ -24,7 +24,12 @@ module.exports = (function() {
   "use strict";
 
   const joss = bnf.extends(jessie)`
-    start ::= super.start;
+    # Override rather than inherit start production.
+    # The start production includes scripts, modules, and function
+    # bodies. Does it therefore include Node modules? I think so.
+    # Distinctions between these three would be post-parsing.
+    # TODO: module syntax
+    start ::= body EOF                                     ${(b,_) => (..._) => ['script',b]};
 
 
     # A.1 Lexical Grammar
@@ -61,8 +66,10 @@ module.exports = (function() {
 
     # TODO introduce memberExpr and newExpr, and override rather than
     # extend callExpr and updateExpr, in order to introduce "new" and
-    # "super" in a manner conformant to the EcmaScript grammar.  TODO
-    # Can we leverage our PEG grammar formalism to express the
+    # "super" in a manner conformant to the EcmaScript grammar.
+    # Introduce leftExpr. Revise updateExpr to use leftExpr rather
+    # than going directly to callExpr.
+    # TODO Can we leverage our PEG grammar formalism to express the
     # standard grammar more simply?
 
     callExpr ::=
@@ -75,12 +82,14 @@ module.exports = (function() {
 
     updateExpr ::=
       super.updateExpr
-    / leftExpr NO_NEWLINE ("++" / "--")                    ${(e,_,op) => [`post${op}`,e]}
+    / callExpr NO_NEWLINE ("++" / "--")                    ${(e,_,op) => [`post${op}`,e]}
     / ("++" / "--") unaryExpr                              ${(op,e) => [`pre${op}`,e]};
+
 
     preOp ::=
       super.preOp
-    / "delete" unaryExpr                                   ${(_,e) => ['delete',e]};
+    / "delete"
+    / "await";
 
     // override with standard
     relExpr ::= addExpr (relOp addExpr)*                   ${binary};
@@ -99,9 +108,95 @@ module.exports = (function() {
     / yieldExpr
     / asyncArrowFunc;
 
-    # TODO
-    yieldExpr ::= FAIL;
-    asyncArrowFunc ::= FAIL;
+    # TODO Override lValue to include all the possible interpretations
+    # of leftExpr. Even once leftExpr exists, it would be better to
+    # enumerate these lValue interpretations directly rather than use
+    # the cover-grammar approach of the spec. Since we're using a PEG,
+    # we should not need a cover grammar.
+
+
+    # A.3 Statements
+
+    statement ::=
+      super.statement
+    / "var" binding ** "," ";"                             ${(op,decls,_) => ['var',decls]}
+    /                                                      ${_ => ['empty']}
+    / "with" "(" expr ")" arm                              ${(_,_2,s,_3,b) => ['with',s,b]};
+
+    # TODO provide all other variations of "for"
+    breakableStatement ::=
+      super.breakableStatement
+    / "do" arm "while" "(" expr ")"                        ${(_,b,_2,_3,c,_4) => ['doWhile',b,c]};
+
+    # override
+    arm ::= statement;
+
+    declaration ::=
+      super.declaration
+    / generatorDecl
+    / asyncFuncDecl
+    / asyncGeneratorDecl
+    / classDecl;
+
+    elementParam ::=
+      super.elementParam
+    / ellision;
+
+    # override
+    clause ::= caseLabel body                              ${(cs1,b) => ['clause',[cs1],[...b]]};
+
+
+    # A.4 Functions and Classes
+
+    asyncArrowFunc ::= "async" arrowFunc                   ${(_,a) => ['async',...a]};
+
+    methodDef ::=
+      super.methodDef
+    / generatorMethod
+    / asyncMethod
+    / asyncGeneratorMethod;
+
+
+    generatorMethod ::=
+      "*" method                                           ${(_,m) => ['generator',...m]};
+
+    generatorDecl ::=
+      "function" "*" defVar "(" param ** "," ")" block     ${(_,n,_2,p,_3,b) => ['generator','functionDecl',n,p,b]};
+
+    generatorExpr ::=
+      "function" "*" defVar? "(" param ** "," ")" block    ${(_,n,_2,p,_3,b) => ['generator','functionExpr',n,p,b]};
+
+    yieldExpr ::=
+      "yield" NO_NEWLINE "*" assignExpr                    ${(_,_2,rep,e) => ['yieldAll',e]}
+    / "yield" NO_NEWLINE assignExpr                        ${(_,_2,rep,e) => ['yield',e]}
+    / "yield";                                             ${_ => ['yield']};
+
+
+    asyncMethod ::=
+      "async" method                                       ${(_,m) => ['async',...m]};
+
+    asyncFuncDecl ::=
+      "async" functionDecl                                 ${(_,f) => ['async',...f]};
+
+    asyncFuncExpr ::=
+      "async" functionExpr                                 ${(_,f) => ['async',...f]};
+
+
+    asyncGeneratorMethod ::=
+      "async" "*" method                                   ${(_,m) => ['asyncGenerator',...m]};
+
+    asyncGeneratorDecl ::=
+      "async" generatorDecl                                ${(_,['generator',...f]) => ['asyncGenerator',...f]};
+
+    asyncGeneratorExpr ::=
+      "async" generatorExpr                                ${(_,['generator',...f]) => ['asyncGenerator',...f]};
+
+    # TODO classes
+
+
+    # A.5 Scripts and Modules
+      
+    # TODO modules and full import export
 
   `;
 

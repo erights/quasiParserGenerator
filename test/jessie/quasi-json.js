@@ -16,7 +16,7 @@ module.exports = (function() {
 
   const json = bnf`
     # to be overridden or inherited
-    start ::= assignExpr EOF                               ${(v,_) => (..._) => v};
+    start ::= primaryExpr EOF                              ${(v,_) => (..._) => v};
 
     # to be extended
     primaryExpr ::=
@@ -33,16 +33,13 @@ module.exports = (function() {
     element ::= assignExpr;
 
     # The JavaScript and JSON grammars calls records "objects"
-    record ::= "{" propDef ** "," "}"                         ${(_,ps,_2) => ['record',ps]};
+    record ::= "{" propDef ** "," "}"                      ${(_,ps,_2) => ['record',ps]};
 
     # to be extended
-    propDef ::= propName ":" assignExpr                       ${(k,_,e) => ['prop',k,e]};
+    propDef ::= propName ":" assignExpr                    ${(k,_,e) => ['prop',k,e]};
 
     # to be extended
     propName ::= STRING;
-
-    # to be overridden or extended
-    assignExpr ::= primExpr;
   `;
 
 
