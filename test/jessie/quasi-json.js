@@ -16,7 +16,7 @@ module.exports = (function() {
 
   const json = bnf`
     # to be overridden or inherited
-    start ::= primaryExpr EOF                              ${(v,_) => (..._) => v};
+    start ::= assignExpr EOF                               ${(v,_) => (..._) => v};
 
     # to be extended
     primaryExpr ::=
@@ -40,6 +40,9 @@ module.exports = (function() {
 
     # to be extended
     propName ::= STRING;
+
+    # to be overridden
+    assignExpr ::= primaryExpr;
   `;
 
 

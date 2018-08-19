@@ -210,7 +210,7 @@ module.exports = (function() {
       orElseExpr
     / orElseExpr "?" assignExpr ":" assignExpr             ${(c,_,t,_2,e) => ['cond',c,t,e]};
 
-    # to be extended
+    # override, to be extended
     assignExpr ::= condExpr;
 
     # The comma expression is in Jax and Jessie merely to allow
