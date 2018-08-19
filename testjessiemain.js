@@ -5,7 +5,9 @@ module.exports = (function(){
   "use strict";
 
   const {def} = require('./src/sesshim.js');
-  const {jessie} = require('./test/jessie/jessie.js');
+  const {json} = require('./test/jessie/quasi-json.js');
+  const {jax} = require('./test/jessie/quasi-jax.js');
+  const {jessie} = require('./test/jessie/quasi-jessie.js');
 
   console.log('----------');
   let ast = jessie`22.toString(ii);`;

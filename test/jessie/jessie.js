@@ -165,8 +165,8 @@ module.exports = (function() {
 
     # to be extended
     memberPostOp ::=
-    / "[" indexExpr "]"                                    ${(_,e,_2) => ['index',e]}
-      "." IDENT_NAME                                       ${(_,id) => ['get',id]}
+      "[" indexExpr "]"                                    ${(_,e,_2) => ['index',e]}
+    / "." IDENT_NAME                                       ${(_,id) => ['get',id]}
     / quasiExpr                                            ${q => ['tag',q]};
 
     # To be overridden rather than inherited.
@@ -472,7 +472,7 @@ module.exports = (function() {
     indexExpr ::= expr;
 
     superProp ::=
-      "super" "[" indexExpr "]"                            ${(_,_2,e,_3) => ['super',e]
+      "super" "[" indexExpr "]"                            ${(_,_2,e,_3) => ['super',e]}
     / "super" "." IDENT_NAME;
 
     metaProp ::= "new" "." "target"                        ${_ => ['newTarget']};

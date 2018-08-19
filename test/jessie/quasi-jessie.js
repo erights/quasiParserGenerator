@@ -62,13 +62,16 @@ module.exports = (function() {
     / IDENT "=" assignExpr                                       ${(id,_,e) => ['optionalProp',id,id,e]}
     / IDENT                                                ${id => ['matchProp',id,id]};
 
-    # No "new", "super", or MetaProperty.
-    # Extend to recognize proposed eventual send syntax.
-    # After parsing distinguish b!foo(x) as distinct from calling b!foo.
+    # Extend to recognize proposed eventual get syntax.
     memberPostOp ::=
       super.memberPostOp
-    / LATER IDENT_NAME                                     ${(_,id) => ['getLater',id]}
     / LATER "[" indexExpr "]"                              ${(_,_2,e,_3) => ['indexLater',e]}
+    / LATER IDENT_NAME                                     ${(_,id) => ['getLater',id]};
+
+    # Extend to recognize proposed eventual send syntax.
+    # We distinguish b!foo(x) from calling b!foo by a post-parsing pass
+    callPostOp ::=
+      super.callPostOp
     / LATER args                                           ${(_,args) => ['callLater',args]};
 
     # to be extended
@@ -105,7 +108,7 @@ module.exports = (function() {
 
     # The assignExpr form must come after the block form, to make proper use
     # of PEG prioritized choice.
-    arrow ::=
+    arrowFunc ::=
       arrowParams NO_NEWLINE "=>" block                    ${(ps,_,_2,b) => ['arrow',ps,b]}
     / arrowParams NO_NEWLINE "=>" assignExpr               ${(ps,_,_2,e) => ['lambda',ps,e]};
     arrowParams ::=

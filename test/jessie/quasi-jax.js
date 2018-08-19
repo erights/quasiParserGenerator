@@ -30,6 +30,7 @@
 
 const {def} = require('../../src/sesshim.js');
 const {bnf} = require('../../src/bootbnf.js');
+const {binary} = require('../../src/quasi-utils.js');
 const {FAIL} = require('../../src/scanner.js');
 
 const {json} = require('./quasi-json.js');
@@ -132,16 +133,24 @@ module.exports = (function() {
       QUASI_ALL                                            ${q => ['quasi',[q]]}
     / QUASI_HEAD (expr (QUASI_MID expr)*)? QUASI_TAIL      ${(h,ms,t) => ['quasi',qunpack(h,ms,t)]};
 
-    # to be extended We only distinguish memberExpr from callExpr to
-    # accommodate sub-grammars that add "new". Without "new" these
-    # could be collapsed together.
-    memberExpr ::= primaryExpr memberPostOp*               ${binary};
-
     # to be extended
     memberPostOp ::=
-    / "[" indexExpr "]"                                    ${(_,e,_2) => ['index',e]}
-      "." IDENT_NAME                                       ${(_,id) => ['get',id]}
+      "[" indexExpr "]"                                    ${(_,e,_2) => ['index',e]}
+    / "." IDENT_NAME                                       ${(_,id) => ['get',id]}
     / quasiExpr                                            ${q => ['tag',q]};
+
+    # to be extended
+    callPostOp ::=
+      memberPostOp
+    / args                                                 ${args => ['call',args]};
+
+    # Because Jax and Jessie have no "new" or "super", they don't need
+    # to distinguish callExpr from memberExpr. So jax omits memberExpr
+    # and newExpr. Instead, in Jax, callExpr jumps directly to
+    # primaryExpr and updateExpr jumps directly to callExpr.
+
+    # to be overridden.
+    callExpr ::= primaryExpr callPostOp*                      ${binary};
 
     # To be overridden rather than inherited.
     # Introduced to impose a non-JS restriction
@@ -151,30 +160,14 @@ module.exports = (function() {
       NUMBER                                               ${n => ['data',n]}
     / "+" unaryExpr                                        ${(op,e) => [op,e]};
 
-    # to be extended
-    newExpr ::= memberExpr;
-
-    # to be extended
-    callExpr ::= memberExpr callPostOp+                    ${binary};
-
-    callPostOp ::=
-      memberPostOp
-    / args                                                 ${args => ['call',args]};
-
     args ::= "(" arg ** "," ")"                            ${(_,args,_2) => args};
 
     arg ::=
       assignExpr
     / "..." assignExpr                                     ${(_,e) => ['spread',e]};
 
-    # split from lvalue, which Jessie can restrict assignment.
-    # leftExpr remains purely to express predecence.
-    leftExpr ::=
-      newExpr
-    / callExpr;
-
-    # to be extended
-    updateExpr ::= leftExpr;
+    # to be overridden
+    updateExpr ::= callExpr;
 
     unaryExpr ::=
       preOp unaryExpr                                      ${(op,e) => [op,e]}

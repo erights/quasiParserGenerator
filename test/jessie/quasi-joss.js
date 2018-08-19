@@ -55,36 +55,28 @@ module.exports = (function() {
       super.propName
     / "[" assignExpr "]"                                   ${(_,e,_2) => ['computed',e]};
 
-    memberExpr ::=
-      super.member
-    / superProp
-    / metaProp
-    / "new" memberExpr args                                ${(_,e,args) => ['newCall',e,args]};
-
     # override rather than extend
     indexExpr ::= expr;
 
-    superProp ::=
-      "super" "[" indexExpr "]"                            ${(_,_2,e,_3) => ['super',e]
-    / "super" "." IDENT_NAME;
 
-    metaProp ::= "new" "." "target"                        ${_ => ['newTarget']};
-
-    # override rather than extend
-    indexExpr ::= expr;
-
-    newExpr ::=
-      super.newExpr
-    / "new" newExpr                                        ${(_,e) => ['newCall',e,[]]};
+    # TODO introduce memberExpr and newExpr, and override rather than
+    # extend callExpr and updateExpr, in order to introduce "new" and
+    # "super" in a manner conformant to the EcmaScript grammar.  TODO
+    # Can we leverage our PEG grammar formalism to express the
+    # standard grammar more simply?
 
     callExpr ::=
       super.callExpr
+    / "new" "." "target"                                   ${_ => ['newTarget']}
+    / "new" memberExpr args                                ${(_,e,args) => ['newCall',e,args]}
+    / "super" "[" indexExpr "]"                            ${(_,_2,e,_3) => ['superIndex',e]}
+    / "super" "." IDENT_NAME                               ${(_,_2,name) => ['superGet',e]}
     / "super" args                                         ${(_,args) => ['superCall',args]};
 
     updateExpr ::=
       super.updateExpr
     / leftExpr NO_NEWLINE ("++" / "--")                    ${(e,_,op) => [`post${op}`,e]}
-    / ("++" / "--") unaryExpr                              ${(op,e) => [`pre${op}`,e]}
+    / ("++" / "--") unaryExpr                              ${(op,e) => [`pre${op}`,e]};
 
     preOp ::=
       super.preOp
