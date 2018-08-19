@@ -107,14 +107,6 @@ module.exports = (function() {
     defVar ::= IDENT                                       ${id => ['def',id]};
 
 
-    # For most identifiers that ES2017 treats as IDENT but recognizes
-    # as pseudo-keywords in a context dependent manner, Jax simply makes
-    # keywords. However, this would be too painful for "get" and
-    # "set", so instead we use our parser-generator's support syntactic
-    # predicates. TODO: Is it really too painful? Try it.
-    identGet ::= IDENT                                     ${id => (id === "get" ? id : FAIL)};
-    identSet ::= IDENT                                     ${id => (id === "set" ? id : FAIL)};
-
     primaryExpr ::=
       super.primaryExpr
     / quasiExpr

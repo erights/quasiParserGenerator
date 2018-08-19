@@ -31,6 +31,14 @@ module.exports = (function() {
     # For proposed eventual send expressions
     LATER ::= NO_NEWLINE "!";
 
+    # For most identifiers that ES2017 treats as IDENT but recognizes
+    # as pseudo-keywords in a context dependent manner, Jessie simply
+    # makes keywords. However, this would be too painful for "get" and
+    # "set", so instead we use our parser-generator's support
+    # syntactic predicates. TODO: Is it really too painful? Try it.
+    GET ::= IDENT                                          ${id => (id === "get" ? id : FAIL)};
+    SET ::= IDENT                                          ${id => (id === "set" ? id : FAIL)};
+
 
     # A.2 Expressions
 
@@ -211,8 +219,8 @@ module.exports = (function() {
     # to be extended
     methodDef ::=
       method
-    / identGet propName "(" ")" block                      ${(_,n,_2,_3,b) => ['getter',n,[],b]}
-    / identSet propName "(" param ")" block                ${(_,n,_2,p,_3,b) => ['setter',n,[p],b]};
+    / GET propName "(" ")" block                           ${(_,n,_2,_3,b) => ['getter',n,[],b]}
+    / SET propName "(" param ")" block                     ${(_,n,_2,p,_3,b) => ['setter',n,[p],b]};
 
     method ::=
       propName "(" param ** "," ")" block                  ${(n,_,p,_2,b) => ['method',n,p,b]};
