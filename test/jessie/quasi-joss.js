@@ -161,10 +161,10 @@ module.exports = (function() {
       "*" method                                           ${(_,m) => ['generator',...m]};
 
     generatorDecl ::=
-      "function" "*" defVar "(" param ** "," ")" block     ${(_,n,_2,p,_3,b) => ['generator','functionDecl',n,p,b]};
+      "function" "*" VAR_DEF "(" param ** "," ")" block    ${(_,n,_2,p,_3,b) => ['generator','functionDecl',n,p,b]};
 
     generatorExpr ::=
-      "function" "*" defVar? "(" param ** "," ")" block    ${(_,n,_2,p,_3,b) => ['generator','functionExpr',n,p,b]};
+      "function" "*" VAR_DEF? "(" param ** "," ")" block   ${(_,n,_2,p,_3,b) => ['generator','functionExpr',n,p,b]};
 
     yieldExpr ::=
       "yield" NO_NEWLINE "*" assignExpr                    ${(_,_2,rep,e) => ['yieldAll',e]}

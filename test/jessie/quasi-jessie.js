@@ -80,7 +80,7 @@ module.exports = (function() {
 
     # to be overridden or extended
     lValue ::= 
-      useVar
+      VAR_USE
     / primaryExpr "[" indexExpr "]"                        ${(pe,_,e,_2) => ['index',pe,e]}
     / primaryExpr LATER "[" indexExpr "]"                  ${(pe,_,_2,e,_3) => ['indexLater',pe,e]}
     / primaryExpr "." IDENT_NAME                           ${(pe,_,id) => ['get',pe,id]}
@@ -151,8 +151,8 @@ module.exports = (function() {
 
     binding ::= 
       bindingPattern "=" assignExpr                        ${(p,_,e) => ['bind',p,e]}
-    / defVar "=" assignExpr                                ${(p,_,e) => ['bind',p,e]}
-    / defVar;
+    / VAR_DEF "=" assignExpr                               ${(p,_,e) => ['bind',p,e]}
+    / VAR_DEF;
 
     bindingPattern ::=
       "[" elementParam ** "," "]"                          ${(_,ps,_2) => ['matchArray',ps]}
@@ -160,7 +160,7 @@ module.exports = (function() {
 
     pattern ::=
       bindingPattern
-    / defVar
+    / VAR_DEF
     / dataLiteral                                          ${n => ['matchData',JSON.parse(n)]}
     / HOLE                                                 ${h => ['patternHole',h]};
 
@@ -169,14 +169,14 @@ module.exports = (function() {
 
     param ::=
       "..." pattern                                        ${(_,p) => ['rest',p]}
-    / defVar "=" assignExpr                                ${(v,_,e) => ['optional',v,e]}
+    / VAR_DEF "=" assignExpr                               ${(v,_,e) => ['optional',v,e]}
     / pattern;
 
     propParam ::=
       "..." pattern                                        ${(_,p) => ['restObj',p]}
     / propName ":" pattern                                 ${(k,_,p) => ['matchProp',k,p]}
-    / defVar "=" assignExpr                                ${(id,_,e) => ['optionalProp',id,id,e]}
-    / defVar                                               ${id => ['matchProp',id,id]};
+    / VAR_DEF "=" assignExpr                               ${(id,_,e) => ['optionalProp',id,id,e]}
+    / VAR_DEF                                              ${id => ['matchProp',id,id]};
 
     # Use PEG prioritized choice.
     # TODO emit diagnostic for failure cases.
@@ -201,10 +201,10 @@ module.exports = (function() {
     # A.4 Functions and Classes
 
     functionDecl ::=
-      "function" defVar "(" param ** "," ")" block         ${(_,n,_2,p,_3,b) => ['functionDecl',n,p,b]};
+      "function" VAR_DEF "(" param ** "," ")" block        ${(_,n,_2,p,_3,b) => ['functionDecl',n,p,b]};
 
     functionExpr ::=
-      "function" defVar? "(" param ** "," ")" block        ${(_,n,_2,p,_3,b) => ['functionExpr',n,p,b]};
+      "function" VAR_DEF? "(" param ** "," ")" block       ${(_,n,_2,p,_3,b) => ['functionExpr',n,p,b]};
 
     # The assignExpr form must come after the block form, to make proper use
     # of PEG prioritized choice.
