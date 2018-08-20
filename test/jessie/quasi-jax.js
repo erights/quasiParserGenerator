@@ -174,7 +174,7 @@ module.exports = (function() {
 
     # to be extended
     # No prefix or postfix "++" or "--".
-    # No "delete". No bitwise "~".
+    # No "delete".
     preOp ::= "void" / "typeof" / "+" / "-" / "~" / "!";
 
     # Different communities will think -x**y parses in different ways,
