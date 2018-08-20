@@ -192,10 +192,10 @@ module.exports = (function() {
     # relational, equality, and bitwise operators is surprising, and
     # therefore hazardous. Here, none of these associate with the
     # others, forcing parens to disambiguate.
-    eagerExpr ::= addExpr (eagerOp addExpr)?               ${binary};
+    eagerExpr ::= shiftExpr (eagerOp shiftExpr)?           ${binary};
 
-    andThenExpr ::= eagerExpr ("&&" eagerExpr)*            ${binary};
-    orElseExpr ::= andThenExpr ("||" andThenExpr)*         ${binary};
+    andThenExpr ::= eagerExpr (andThenOp eagerExpr)*            ${binary};
+    orElseExpr ::= andThenExpr (orElseOp andThenExpr)*         ${binary};
 
     multOp ::= "*" / "/" / "%";
     addOp ::= "+" / "-";    
@@ -205,6 +205,9 @@ module.exports = (function() {
     bitOp ::= "&" / "^" / "|";
 
     eagerOp ::= relOp / eqOp / bitOp;
+
+    andThenOp ::= "&&";
+    orElseOp ::= "||";
 
     condExpr ::=
       orElseExpr

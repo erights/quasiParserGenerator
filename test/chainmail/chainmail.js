@@ -56,7 +56,7 @@ module.exports = (function() {
     conds ::= "{" cond* "}"                                ${(_,conds,_2) => conds};
 
     cond ::=
-      "not" conds                                           ${(_,conds) => ['not',conds]}
+      "not" conds                                          ${(_,conds) => ['not',conds]}
     / "forall" (param ++ ",") conds                        ${(_,params,conds) => ['forall',params,conds]}
     / "exists" (param ++ ",") conds                        ${(_,params,conds) => ['exists',params,conds]}
     / expr "obeys" typeExpr                                ${(expr,_,typeExpr) => ['obeys',expr,typeExpr]}
