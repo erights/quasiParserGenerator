@@ -73,7 +73,6 @@ module.exports = (function() {
       "specification defVar "{" field* entry* policy* "}"  ${(_,id,_2,fs,ents,pols,_3) => ['spec',id,fs,ents,pols]};
 
     body ::= spec*;
-
   `;
 
   return def({chainmail});
