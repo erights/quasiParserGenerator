@@ -34,7 +34,9 @@ module.exports = (function() {
     field ::= "field" defVar typeDecl? ";"                 ${(_,id,optType,_2) => ['field',id,optType]};
 
     entry ::=
-      "method" propName "(" param ** "," ")" typeDecl? ";" ${(_,id,_2,ps,_3,optType) => ['method',id,ps,optType]}
+      "call" "(" param ** "," ")" typeDecl? ";"            ${(_,_2,ps,_3,optType) => ['func',ps,optType]}
+    / "construct" "(" param ** "," ")" typeDecl? ";"       ${(_,_2,ps,_3,optType) => ['class',ps,optType]}
+    / "method" propName "(" param ** "," ")" typeDecl? ";" ${(_,id,_2,ps,_3,optType) => ['method',id,ps,optType]}
     / "property" propName typeDecl? ";"                    ${(_,id,optType,_2) => ['property',id,optType]};
 
     primAssertion ::=
@@ -55,6 +57,7 @@ module.exports = (function() {
     quantOp ::= "forall" / "exists";
 
     # TODO Did "obeys" disappear?
+    # TODO What does Sophia's "Calls" mean?
     assertion ::=
       primAssertion (assertionOp primAssertion)*           ${binary}
     / primAssertion "@" space                              ${(assrt,_,space) => ['at',assrt,space]};
