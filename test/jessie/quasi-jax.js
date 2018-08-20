@@ -194,8 +194,8 @@ module.exports = (function() {
     # others, forcing parens to disambiguate.
     eagerExpr ::= shiftExpr (eagerOp shiftExpr)?           ${binary};
 
-    andThenExpr ::= eagerExpr (andThenOp eagerExpr)*            ${binary};
-    orElseExpr ::= andThenExpr (orElseOp andThenExpr)*         ${binary};
+    andThenExpr ::= eagerExpr (andThenOp eagerExpr)*       ${binary};
+    orElseExpr ::= andThenExpr (orElseOp andThenExpr)*     ${binary};
 
     multOp ::= "*" / "/" / "%";
     addOp ::= "+" / "-";    
