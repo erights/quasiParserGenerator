@@ -64,7 +64,7 @@ module.exports = (function() {
     # TODO is "access" the old "mayAccess"?
     assertionOp ::= 
       "and" / "or" / "implies"
-    / "access";
+    / "canAccess";
 
     policy ::= "policy" defVar assertion ";"               ${(_,id,assrt) => ['policy',id,assrt]};
 
