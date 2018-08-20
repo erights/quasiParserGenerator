@@ -29,7 +29,7 @@ module.exports = (function() {
 
     memberPostOp ::=
       super.memberPostOp
-    / "::" IDENT_NAME                                      ${(_,id) => ['getField',id]};
+    / "::" useVar                                          ${(_,id) => ['getField',id]};
 
     field ::= "field" defVar typeDecl? ";"                 ${(_,id,optType,_2) => ['field',id,optType]};
 
