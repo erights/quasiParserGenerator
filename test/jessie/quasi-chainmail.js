@@ -45,13 +45,9 @@ module.exports = (function() {
     / quantOp param ++ "," "." primAssertion               ${(op,ps,_,assrt) => [op,ps,assrt]}
     / "(" assertion ")"                                    ${(_,p,_2) => p};
 
-    # I'm not sure what keyword is appropriate for Sophia's hollow and
-    # solid circles. My current guess is "may" the a solid circle and
-    # "was" is the hollow circle.  TODO find out.
     # TODO Is "changes" the old "mayEffect"? Why is it now unary?
     primAssertionOp ::=
-      "may"
-    / "was"
+      "was" / "previous" / "next" / "will"
     / "changes";
 
     quantOp ::= "forall" / "exists";
