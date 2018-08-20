@@ -61,7 +61,6 @@ module.exports = (function() {
     # TODO
     space ::= ${FAIL};
 
-    # TODO is "access" the old "mayAccess"?
     assertionOp ::= 
       "and" / "or" / "implies"
     / "canAccess";
