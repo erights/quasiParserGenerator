@@ -1,7 +1,8 @@
 // Options: --free-variable-checker --require --validate
 /*global module require*/
 
-// Chainmail is a holistic specification language for reasoning about risk and trust in an open world.
+// Chainmail is a holistic specification language for reasoning about
+// risk and trust in an open world.
 // See https://www.doc.ic.ac.uk/~scd/Holistic_Specs.WG2.3.pdf
 // especially numbered slides 38(112) and 59(171).
 
