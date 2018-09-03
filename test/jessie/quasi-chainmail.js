@@ -54,7 +54,7 @@ module.exports = (function() {
     preAssertionOp ::=
       "not"
     / "was" / "previous" / "next" / "will"
-    / "changes" / "internal";
+    / "changes";
 
     quantOp ::= "forall" / "exists";
 
@@ -64,8 +64,10 @@ module.exports = (function() {
       primAssertion (assertionOp primAssertion)?           ${binary};
 
     assertionOp ::= 
-      "and" / "or" / "implies"
-    / "canAccess" / "in"
+      "and" / "or" 
+    / "implies" / "if" / "iff"
+    / "only" "if"                                          ${(_,_2) => 'implies'}
+    / "canAccess" / "in" / "isa"
     / "@"                                                  ${_ => 'at'};
 
     policy ::= "policy" defVar assertion                   ${(_,id,asrt) => ['policy',id,asrt]};

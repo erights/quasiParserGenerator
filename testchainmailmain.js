@@ -12,8 +12,16 @@ module.exports = (function(){
 
 spec Mint {
   field currency:Nat;
+  field internal:Set;
 
   method makePurse(amount:Nat) obeys Purse;
+
+  policy internal_1
+  forall (b:Mint, x) {
+    (x in b::internal) iff {
+      (x === b) or ((x isa Purse) and (x::mint === b));
+    };
+  }
 }
 
 spec Purse {
@@ -48,13 +56,13 @@ spec Purse {
   } implies exists (o in S) {
     o in S;
     o canAccess b;
-    not (o in internal b);
+    not (o in b::internal);
   }
 
   policy violate_conserve_2_equiv 
   forall (b:Mint) {
     forall (o in S) {
-      (not (o canAccess b) or (o in internal b)) implies
+      (not (o canAccess b) or (o in b::internal)) implies
         not ((will (changes b::currency)) @ S);
     };
   }
@@ -64,7 +72,7 @@ spec Purse {
   # internal to b is insufficient to modify b.currency.
   forall (b:Mint) {
     forall (o in S) {
-      ((o canAccess b) implies (o in internal b)) implies
+      ((o canAccess b) only if (o in b::internal)) implies
         not ((will (changes b::currency)) @ S);
     };
   }
