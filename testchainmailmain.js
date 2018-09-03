@@ -44,8 +44,8 @@ spec Purse {
   policy Pol_2_equiv forall (b:Mint) {
     forall (o in S) {
       (not (o canAccess b) or (o in internal b)) implies
-        not (will (changes b::currency)) @ S;
-    }
+        not ((will (changes b::currency)) @ S);
+    };
   }
 }
 
