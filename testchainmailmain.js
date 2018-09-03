@@ -16,12 +16,14 @@ spec Mint {
 
   method makePurse(amount:Nat) obeys Purse;
 
-  policy internal_1
+  policy internal_mba_1
   forall (b:Mint, x) {
     (x in b::internal) iff {
       (x === b) or ((x isa Purse) and (x::mint === b));
     };
   }
+
+  # I don't understand mba_2
 }
 
 spec Purse {
@@ -79,24 +81,32 @@ spec Purse {
 
   policy inflate_3
   # The bank can only inflate its own currency
-  {}
+  { # TODO
+  }
 
   policy must_have_4
   # No one can affect the balance of a purse they do not have.
-  {}
+  forall (a:Purse) {
+    will ((changes a::balance) @ S) only if exists (o in S) {
+      o canAccess a;
+      not (o in a::internal);
+    };
+  }
 
   policy non_neg_5
   # Balances are always non-negative.
-  {}
+  { # TODO
+  }
 
   policy trust_6
   # A reported successful deposit can be trusted as much as one trusts
   # the purse one is depositing to.  
-  {}
+  { # TODO
+  }
 }
 
 `;
   console.log(JSON.stringify(ast, undefined, ' '));
 
-  return def({});
+  return def({ast});
 }());
