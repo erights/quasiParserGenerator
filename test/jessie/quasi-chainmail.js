@@ -39,7 +39,7 @@ module.exports = (function() {
     field ::= "field" defVar typeDecl? ";"                 ${(_,id,optType,_2) => ['field',id,optType]};
 
     primAssertion ::=
-      quantOp "(" param ** "," ")" block                   ${(op,_,ps,_2,block) => [op,ps,block]}
+      quantOp "(" param ** "," ")" assertion               ${(op,_,ps,_2,asrt) => [op,ps,asrt]}
     / preAssertionOp primAssertion                         ${(op,p) => [op,p]}
     / "(" assertion ")"                                    ${(_,p,_2) => p}
     / block
@@ -68,7 +68,7 @@ module.exports = (function() {
       "and" / "or" / "implies"
     / "canAccess";
 
-    policy ::= "policy" defVar block                       ${(_,id,block) => ['policy',id,block]};
+    policy ::= "policy" defVar assertion                   ${(_,id,asrt) => ['policy',id,asrt]};
 
     entry ::=
       "call" "(" param ** "," ")" typeDecl? ";"            ${(_,_2,ps,_3,optType) => ['func',ps,optType]}

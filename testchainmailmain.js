@@ -22,19 +22,15 @@ spec Purse {
 
   method deposit(amount :Nat, src);
 
-  policy Pol_1 {
-    forall (a1:Purse, a2:Purse, b1:Nat, b2:Nat, amt:Nat) {
-      {
-        a1 !== a2;
-        a1::mint === a2::mint;
-        a1::balance === b1 and b1 > amt;
-        a2::balance === b2;
-        _ calls a2.deposit(amt, a1);
-      } implies will {
-        a1::balance === b1 - amt;
-        a2::balance === b2 + amt;
-      };
-    };
+  policy Pol_1 forall (a1:Purse, a2:Purse, b1:Nat, b2:Nat, amt:Nat) {
+    a1 !== a2;
+    a1::mint === a2::mint;
+    a1::balance === b1 and b1 > amt;
+    a2::balance === b2;
+    _ calls a2.deposit(amt, a1);
+  } implies will {
+    a1::balance === b1 - amt;
+    a2::balance === b2 + amt;
   }
 }
 
