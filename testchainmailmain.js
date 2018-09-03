@@ -8,7 +8,7 @@ module.exports = (function(){
   const {chainmail} = require('./test/jessie/quasi-chainmail.js');
 
   console.log('----------');
-  let ast = chainmail`
+  const mintMakerSpec = chainmail`
 
 spec Mint {
   field currency:Nat;
@@ -106,7 +106,7 @@ spec Purse {
 }
 
 `;
-  console.log(JSON.stringify(ast, undefined, ' '));
+  console.log(JSON.stringify(mintMakerSpec, undefined, ' '));
 
-  return def({ast});
+  return def({mintMakerSpec});
 }());
