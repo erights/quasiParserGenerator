@@ -11,16 +11,16 @@ module.exports = (function(){
   let ast = chainmail`
 
 spec Mint {
-  field currency :Nat;
+  field currency:Nat;
 
-  method makePurse(amount :Nat) obeys Purse;
+  method makePurse(amount:Nat) obeys Purse;
 }
 
 spec Purse {
   field mint obeys Mint;
-  field balance :Nat;
+  field balance:Nat;
 
-  method deposit(amount :Nat, src);
+  method deposit(amount:Nat, src);
 
   policy Pol_1 forall (a1:Purse, a2:Purse, b1:Nat, b2:Nat, amt:Nat) {
     a1 !== a2;
@@ -39,6 +39,13 @@ spec Purse {
     o in S;
     o canAccess b;
     not (o in internal b);
+  }
+
+  policy Pol_2_equiv forall (b:Mint) {
+    forall (o in S) {
+      (not (o canAccess b) or (o in internal b)) implies
+        not (will (changes b::currency)) @ S;
+    }
   }
 }
 
