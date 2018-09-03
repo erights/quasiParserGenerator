@@ -5,55 +5,41 @@ module.exports = (function(){
   "use strict";
 
   const {def} = require('./src/sesshim.js');
-  const {chainmail} = require('./test/chainmail/chainmail.js');
+  const {chainmail} = require('./test/jessie/quasi-chainmail.js');
 
   console.log('----------');
   let ast = chainmail`
 
-specification ValidPurse {
+spec Mint {
+  field currency :Nat;
+
+  method makePurse(amount :Nat) obeys Purse;
+}
+
+spec Purse {
+  field mint obeys Mint;
   field balance :Nat;
 
-  method deposit(amount :Nat, src) {
-    success implies {
-      // trust
-      pre src obeys ValidPurse;
-      CanTrade(this, src);
-      0 <= amount;
-      amount <= pre src.balance;
-      this.balance === (pre this.balance + amount);
-      src.balance === (pre src.balance - amount);
+  method deposit(amount :Nat, src);
 
-      // risk
-      forall p {
-        ((pre p obeys ValidPurse) and
-         ((p !== this) and (p !== src))) implies
-        p.balance === pre p.balance;
-      }
-      forall o :Object, p obeys Purse {
-        (o mayAccess p) implies pre (o mayAccess p)
-      }
-    }
-    failure implies {
-      // trust
-      not {
-        pre src obeys ValidPurse;
-        pre CanTrade(this,src);
-        0 <= amount;
-        amount <= pre src.balance;
-      }
-
-      // risk
-      forall p {
-        (pre p obeys ValidPurse) implies
-         (p.balance ==== pre p.balance);
-
-      }
-    }
+  policy Pol_1 {
+    forall (a1:Purse, a2:Purse, b1:Nat, b2:Nat, amt:Nat) {
+      {
+        a1 !== a2;
+        a1::mint === a2::mint;
+        a1::balance === b1 and b1 > amt;
+        a2::balance === b2;
+        _ calls a2.deposit(amt, a1);
+      } implies will {
+        a1::balance === b1 - amt;
+        a2::balance === b2 + amt;
+      };
+    };
   }
 }
 
 `;
-  console.log(JSON.stringify(ast));
+  console.log(JSON.stringify(ast, undefined, ' '));
 
   return def({});
 }());

@@ -11,6 +11,7 @@
 
 const {def} = require('../../src/sesshim.js');
 const {bnf} = require('../../src/bootbnf.js');
+const {binary} = require('../../src/quasi-utils.js');
 const {FAIL} = require('../../src/scanner.js');
 
 const {jax} = require('./quasi-jax.js');
@@ -20,10 +21,14 @@ module.exports = (function() {
 
   const chainmail = bnf.extends(jax)`
     # Override rather than inherit jax's start production.
-    start ::= body EOF                                     ${(b,_) => (..._) => ['script',b]};
+    start ::= body EOF                                     ${(b,_) => (..._) => b};
 
-    typeDecl ::= ":" type                                  ${(_,type) => ['type',type]};
+    typeDecl ::=
+      ":" type                                             ${(_,type) => ['type',type]}
+    / "obeys" specName                                     ${(_,specName) => ['obeys',specName]};
+
     type ::= useVar;
+    specName ::= useVar;
 
     param ::= defVar typeDecl?                             ${(id,optType) => ['param',id,optType]};
 
@@ -33,20 +38,18 @@ module.exports = (function() {
 
     field ::= "field" defVar typeDecl? ";"                 ${(_,id,optType,_2) => ['field',id,optType]};
 
-    entry ::=
-      "call" "(" param ** "," ")" typeDecl? ";"            ${(_,_2,ps,_3,optType) => ['func',ps,optType]}
-    / "construct" "(" param ** "," ")" typeDecl? ";"       ${(_,_2,ps,_3,optType) => ['class',ps,optType]}
-    / "method" propName "(" param ** "," ")" typeDecl? ";" ${(_,id,_2,ps,_3,optType) => ['method',id,ps,optType]}
-    / "property" propName typeDecl? ";"                    ${(_,id,optType,_2) => ['property',id,optType]};
-
     primAssertion ::=
-      eagerExpr
-    / primAssertionOp primAssertion                        ${(op,p) => [op,p]}
-    / quantOp param ++ "," "." primAssertion               ${(op,ps,_,assrt) => [op,ps,assrt]}
-    / "(" assertion ")"                                    ${(_,p,_2) => p};
+      quantOp "(" param ** "," ")" block                   ${(op,_,ps,_2,block) => [op,ps,block]}
+    / preAssertionOp primAssertion                         ${(op,p) => [op,p]}
+    / "(" assertion ")"                                    ${(_,p,_2) => p}
+    / block
+    / eagerExpr "calls" eagerExpr                          ${(caller,_,call) => ['calls',caller,call]}
+    / eagerExpr;
 
-    # TODO Is "changes" the old "mayEffect"? Why is it now unary?
-    primAssertionOp ::=
+    block ::= "{" statement* "}"                           ${(_,stats,_2) => ['block',stats]};
+    statement ::= assertion ";"                            ${(a,_) => a};
+
+    preAssertionOp ::=
       "was" / "previous" / "next" / "will"
     / "changes";
 
@@ -55,7 +58,7 @@ module.exports = (function() {
     # TODO Did "obeys" disappear?
     # TODO What does Sophia's "Calls" mean?
     assertion ::=
-      primAssertion (assertionOp primAssertion)*           ${binary}
+      primAssertion (assertionOp primAssertion)?           ${binary}
     / primAssertion "@" space                              ${(assrt,_,space) => ['at',assrt,space]};
 
     # TODO
@@ -65,10 +68,16 @@ module.exports = (function() {
       "and" / "or" / "implies"
     / "canAccess";
 
-    policy ::= "policy" defVar assertion ";"               ${(_,id,assrt) => ['policy',id,assrt]};
+    policy ::= "policy" defVar block                       ${(_,id,block) => ['policy',id,block]};
+
+    entry ::=
+      "call" "(" param ** "," ")" typeDecl? ";"            ${(_,_2,ps,_3,optType) => ['func',ps,optType]}
+    / "construct" "(" param ** "," ")" typeDecl? ";"       ${(_,_2,ps,_3,optType) => ['class',ps,optType]}
+    / "method" propName "(" param ** "," ")" typeDecl? ";" ${(_,id,_2,ps,_3,optType) => ['method',id,ps,optType]}
+    / "property" propName typeDecl? ";"                    ${(_,id,optType,_2) => ['property',id,optType]};
 
     spec ::=
-      "specification defVar "{" field* entry* policy* "}"  ${(_,id,_2,fs,ents,pols,_3) => ['spec',id,fs,ents,pols]};
+      "spec" defVar "{" field* entry* policy* "}"          ${(_,id,_2,fs,ents,pols,_3) => ['spec',id,fs,ents,pols]};
 
     body ::= spec*;
   `;

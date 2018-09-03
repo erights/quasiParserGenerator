@@ -23,7 +23,7 @@ module.exports = (function(){
 
   // Cheap universal-enough token productions for ad hoc DSLs
   const SINGLE_OP = re`[\[\]\(\){},;]`;
-  const MULTI_OP = re`[:~@%&+=*<>.?|\\\-\^\/]+`;
+  const MULTI_OP = re`[:~@%&+=*<>.?|\\\-\^\/!]+`;
   const LINE_COMMENT_RE = re`#.*\n`;
 
 
