@@ -32,6 +32,14 @@ spec Purse {
     a1::balance === b1 - amt;
     a2::balance === b2 + amt;
   }
+
+  policy Pol_2 forall (b:Mint) {
+    will ((changes b::currency) @ S);
+  } implies exists (o in S) {
+    o in S;
+    o canAccess b;
+    not (o in internal b);
+  }
 }
 
 `;

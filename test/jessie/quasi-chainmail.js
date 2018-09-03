@@ -25,10 +25,12 @@ module.exports = (function() {
 
     typeDecl ::=
       ":" type                                             ${(_,type) => ['type',type]}
-    / "obeys" specName                                     ${(_,specName) => ['obeys',specName]};
+    / "obeys" specName                                     ${(_,specName) => ['obeys',specName]}
+    / "in" space                                           ${(_,space) => ['in',space]};
 
     type ::= useVar;
     specName ::= useVar;
+    space ::= useVar;
 
     param ::= defVar typeDecl?                             ${(id,optType) => ['param',id,optType]};
 
@@ -50,23 +52,21 @@ module.exports = (function() {
     statement ::= assertion ";"                            ${(a,_) => a};
 
     preAssertionOp ::=
-      "was" / "previous" / "next" / "will"
-    / "changes";
+      "not"
+    / "was" / "previous" / "next" / "will"
+    / "changes" / "internal";
 
     quantOp ::= "forall" / "exists";
 
     # TODO Did "obeys" disappear?
     # TODO What does Sophia's "Calls" mean?
     assertion ::=
-      primAssertion (assertionOp primAssertion)?           ${binary}
-    / primAssertion "@" space                              ${(assrt,_,space) => ['at',assrt,space]};
-
-    # TODO
-    space ::= ${FAIL};
+      primAssertion (assertionOp primAssertion)?           ${binary};
 
     assertionOp ::= 
       "and" / "or" / "implies"
-    / "canAccess";
+    / "canAccess" / "in"
+    / "@"                                                  ${_ => 'at'};
 
     policy ::= "policy" defVar assertion                   ${(_,id,asrt) => ['policy',id,asrt]};
 
