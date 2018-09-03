@@ -8,6 +8,10 @@ module.exports = (function(){
   const {chainmail} = require('./test/jessie/quasi-chainmail.js');
 
   console.log('----------');
+
+  
+  // From https://www.doc.ic.ac.uk/~scd/Holistic_Specs.WG2.3.pdf
+  
   const mintMakerSpec = chainmail`
 
 spec Mint {
