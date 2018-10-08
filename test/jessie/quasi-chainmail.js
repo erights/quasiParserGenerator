@@ -24,12 +24,19 @@ module.exports = (function() {
     start ::= body EOF                                     ${(b,_) => (..._) => b};
 
     typeDecl ::=
-      ":" type                                             ${(_,type) => ['type',type]}
-    / "obeys" specName                                     ${(_,specName) => ['obeys',specName]}
+      ":" useType                                          ${(_,type) => ['type',type]}
+    / "?" useType                                          ${(_,type) => ['allegedly',type]}
+    / "obeys" useType                                      ${(_,type) => ['obeys',type]}
     / "in" space                                           ${(_,space) => ['in',space]};
 
-    type ::= useVar;
-    specName ::= useVar;
+    useType ::= 
+      useVar "[" useType "]"                               ${(g,_,t,_2) => ['generic',g,t]}
+    / useVar;
+
+    defType ::=
+      defVar "[" useType "]"                               ${(g,_,t,_2) => ['generic',g,t]}
+    / defVar;
+
     space ::= useVar;
 
     param ::= defVar typeDecl?                             ${(id,optType) => ['param',id,optType]};
@@ -45,7 +52,7 @@ module.exports = (function() {
     / preAssertionOp primAssertion                         ${(op,p) => [op,p]}
     / "(" assertion ")"                                    ${(_,p,_2) => p}
     / block
-    / eagerExpr "calls" eagerExpr                          ${(caller,_,call) => ['calls',caller,call]}
+    / "calls" eagerExpr                                    ${(_,call) => ['calls',call]}
     / eagerExpr;
 
     block ::= "{" statement* "}"                           ${(_,stats,_2) => ['block',stats]};
@@ -78,8 +85,10 @@ module.exports = (function() {
     / "method" propName "(" param ** "," ")" typeDecl? ";" ${(_,id,_2,ps,_3,optType) => ['method',id,ps,optType]}
     / "property" propName typeDecl? ";"                    ${(_,id,optType,_2) => ['property',id,optType]};
 
+    element ::= spec / field / entry / policy;
+
     spec ::=
-      "spec" defVar "{" field* entry* policy* "}"          ${(_,id,_2,fs,ents,pols,_3) => ['spec',id,fs,ents,pols]};
+      "specification" defType "{" element* "}" ${(_,type,_2,elements,_3) => ['spec',type,elements]};
 
     body ::= spec*;
   `;
