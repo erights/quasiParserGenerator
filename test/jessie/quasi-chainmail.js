@@ -7,20 +7,20 @@
 // especially numbered slides 38(112) and 59(171).
 
 // The Chainmail defined here is for use with Jessie and SES programs,
-// and so builds on Jax, the subset of JavaScript for pure expressions.
+// and so builds on Jester, the subset of JavaScript for pure expressions.
 
 const {def} = require('../../src/sesshim.js');
 const {bnf} = require('../../src/bootbnf.js');
 const {binary} = require('../../src/quasi-utils.js');
 const {FAIL} = require('../../src/scanner.js');
 
-const {jax} = require('./quasi-jax.js');
+const {jester} = require('./quasi-jester.js');
 
 module.exports = (function() {
   "use strict";
 
-  const chainmail = bnf.extends(jax)`
-    # Override rather than inherit jax's start production.
+  const chainmail = bnf.extends(jester)`
+    # Override rather than inherit jester's start production.
     start ::= body EOF                                     ${(b,_) => (..._) => b};
 
     typeDecl ::=
