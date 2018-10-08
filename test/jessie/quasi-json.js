@@ -39,7 +39,7 @@ module.exports = (function() {
     propDef ::= propName ":" assignExpr                    ${(k,_,e) => ['prop',k,e]};
 
     # to be extended
-    propName ::= STRING;
+    propName ::= STRING                                    ${str => ['data', JSON.parse(str)]};
 
     # to be overridden
     assignExpr ::= primaryExpr;
