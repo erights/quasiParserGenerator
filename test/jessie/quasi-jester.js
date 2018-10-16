@@ -32,7 +32,8 @@
 
 const {def} = require('../../src/sesshim.js');
 const {bnf} = require('../../src/bootbnf.js');
-const {binary, qunpack} = require('../../src/quasi-utils.js');
+const {binary} = require('../../src/interp-utils.js');
+const {qunpack} = require('../../src/quasi-utils.js');
 const {FAIL} = require('../../src/scanner.js');
 
 const {json} = require('./quasi-json.js');

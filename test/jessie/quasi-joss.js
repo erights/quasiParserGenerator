@@ -15,7 +15,7 @@
 
 const {def} = require('../../src/sesshim.js');
 const {bnf} = require('../../src/bootbnf.js');
-const {binary} = require('../../quasi-utils.js');
+const {binary} = require('../../interp-utils.js');
 const {FAIL} = require('../../src/scanner.js');
 
 const {jessie} = require('./quasi-jessie.js');
