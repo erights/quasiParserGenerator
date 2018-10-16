@@ -13,8 +13,8 @@ module.exports = (function(){
 
   const {interpJSON} = require('./test/jessie/interp-json.js');
 
-  const val = interpJSON(ast, {});
-  console.log(val);
+  const val = interpJSON(ast);
+  console.log(JSON.stringify(val));
 
   return def({});
 }());

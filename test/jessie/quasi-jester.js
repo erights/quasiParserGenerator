@@ -32,7 +32,7 @@
 
 const {def} = require('../../src/sesshim.js');
 const {bnf} = require('../../src/bootbnf.js');
-const {binary} = require('../../src/quasi-utils.js');
+const {binary, qunpack} = require('../../src/quasi-utils.js');
 const {FAIL} = require('../../src/scanner.js');
 
 const {json} = require('./quasi-json.js');
@@ -159,7 +159,7 @@ module.exports = (function() {
     # floating point, NaN, Infinity, and -Infinity.
     indexExpr ::= 
       NUMBER                                               ${n => ['data',n]}
-    / "+" unaryExpr                                        ${(op,e) => [op,e]};
+    / "+" unaryExpr                                        ${(_,e) => [`pre:+`,e]};
 
     args ::= "(" arg ** "," ")"                            ${(_,args,_2) => args};
 
@@ -177,7 +177,8 @@ module.exports = (function() {
     # to be extended
     # No prefix or postfix "++" or "--".
     # No "delete".
-    preOp ::= "void" / "typeof" / "+" / "-" / "~" / "!";
+    preOp ::= "void" / "typeof" / prePre;
+    prePre ::= "+" / "-" / "~" / "!"                       ${op => `pre:${op}`};
 
     # Different communities will think -x**y parses in different ways,
     # so the EcmaScript grammar forces parens to disambiguate.

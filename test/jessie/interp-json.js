@@ -48,37 +48,18 @@ module.exports = (function() {
     }
   }
 
-  function interpJSON(ast, env) {
-    return new InterpJSONVisitor(env).i(ast);
+  function interpJSON(ast) {
+    return new InterpJSONVisitor().i(ast);
   }
 
   class InterpJSONVisitor {
-    constructor(env) {
-      this.env = env;
-    }
-    i(ast) {
-      return visit(ast, this);
-    }
-    all(args) {
-      const result = [];
-      args.forEach(arg => {
-        if (typeof arg === 'object' && arg[0] === 'spread') {
-          result.push(...this.i(arg[1]));
-        } else {
-          result.push(this.i(arg));
-        }
-      });
-      return result;
-    }
-    data(_, value) {
-      return value;
-    }
-    array(_, args) {
-      return this.all(args);
-    }
+    constructor() {}
+    i(ast) { return visit(ast, this); }
+    data(_, value) { return value; }
+    array(_, args) { return args.map(arg => this.i(arg)); }
     record(_, props) {
       const result = {};
-      props.map(prop => visit(prop, {
+      props.forEach(prop => visit(prop, {
         // An arrow function to capture lexical this
         prop: (_, key,val) => { result[this.i(key)] = this.i(val); }
       }));
@@ -86,5 +67,6 @@ module.exports = (function() {
     }
   }
 
-  return def({interpJSON});
+  return def({Panic, assert, uninitialized, visit, ReplaceVisitor,
+              InterpJSONVisitor, interpJSON});
 }());
