@@ -6,7 +6,7 @@ module.exports = (function(){
 
   const {def} = require('./src/sesshim.js');
   const {json} = require('./test/jessie/quasi-json.js');
-  const {jester} = require('./test/jessie/quasi-jester.js');
+  const {justin} = require('./test/jessie/quasi-justin.js');
   const {jessie} = require('./test/jessie/quasi-jessie.js');
 
   console.log('----------');

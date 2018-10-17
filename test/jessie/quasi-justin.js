@@ -4,10 +4,9 @@
 // Subsets of JavaScript, starting from the grammar as defined at
 // http://www.ecma-international.org/ecma-262/9.0/#sec-grammar-summary
 
-// Jester is the safe Javascript Expression Syntax for Transmission
-// and Evaluation, a potentially pure decidable superset of JSON and
-// subset of Jessie, that relieves many of the pain points of using
-// JSON as a data format:
+// Justin is the safe JavaScript expression language, a potentially
+// pure decidable superset of JSON and subset of Jessie, that relieves
+// many of the pain points of using JSON as a data format:
 //   * unquoted indentifier property names.
 //   * comments.
 //   * multi-line strings (via template literals).
@@ -15,18 +14,18 @@
 //   * includes all floating point values: NaN, Infinity, -Infinity
 //   * will include BigInt once available.
 
-// Jester also includes most pure JavaScript expressions. Jester does not
+// Justin also includes most pure JavaScript expressions. Justin does not
 // include function expressions or variable or function
 // definitions. However, it does include free variable uses and
-// function calls; so the purity and decidability of Jester depends on
+// function calls; so the purity and decidability of Justin depends on
 // the endowments provided for these free variable bindings.
 
-// Jester is defined to be extended into the Jessie grammar, which is
+// Justin is defined to be extended into the Jessie grammar, which is
 // defined to be extended into the JavaScript grammar.
 // See https://github.com/Agoric/Jessie/blob/master/README.md
 // for documentation of the Jessie grammar.
 
-// Jester is defined to be extended into the Chainmail grammar, to
+// Justin is defined to be extended into the Chainmail grammar, to
 // provide its expression language in a JS-like style. Chainmail
 // expressions need to be pure and should be decidable.
 
@@ -42,7 +41,7 @@ const {json} = require('./quasi-json.js');
 module.exports = (function() {
   "use strict";
 
-  const jester = bnf.extends(json)`
+  const justin = bnf.extends(json)`
     # to be overridden or inherited
     start ::= assignExpr EOF                               ${(v,_) => (..._) => v};
 
@@ -53,7 +52,7 @@ module.exports = (function() {
 
     IDENT_NAME ::= IDENT / RESERVED_WORD;
 
-    # Omit "async", "arguments", and "eval" from IDENT in Jester even
+    # Omit "async", "arguments", and "eval" from IDENT in Justin even
     # though ES2017 considers them in IDENT.
     RESERVED_WORD ::=
       KEYWORD / RESERVED_KEYWORD / FUTURE_RESERVED_WORD
@@ -73,7 +72,7 @@ module.exports = (function() {
     / "void"
     / "while";
 
-    # Unused by Jester but enumerated here, in order to omit them
+    # Unused by Justin but enumerated here, in order to omit them
     # from the IDENT token.
     RESERVED_KEYWORD ::=
       "class"
@@ -103,8 +102,8 @@ module.exports = (function() {
 
     useVar ::= IDENT                                       ${id => ['use',id]};
 
-    # Jester does not contain variable definitions, only uses. However,
-    # multiple languages that extend Jester will contain defining
+    # Justin does not contain variable definitions, only uses. However,
+    # multiple languages that extend Justin will contain defining
     # occurrences of variable names, so we put the defVar production
     # here.
     defVar ::= IDENT                                       ${id => ['def',id]};
@@ -146,9 +145,9 @@ module.exports = (function() {
       memberPostOp
     / args                                                 ${args => ['call',args]};
 
-    # Because Jester and Jessie have no "new" or "super", they don't need
-    # to distinguish callExpr from memberExpr. So jester omits memberExpr
-    # and newExpr. Instead, in Jester, callExpr jumps directly to
+    # Because Justin and Jessie have no "new" or "super", they don't need
+    # to distinguish callExpr from memberExpr. So justin omits memberExpr
+    # and newExpr. Instead, in Justin, callExpr jumps directly to
     # primaryExpr and updateExpr jumps directly to callExpr.
 
     # to be overridden.
@@ -220,13 +219,13 @@ module.exports = (function() {
     # override, to be extended
     assignExpr ::= condExpr;
 
-    # The comma expression is in Jester and Jessie merely to allow
+    # The comma expression is in Justin and Jessie merely to allow
     # expressions like (1,base.name)(args), in order to avoid passing
     # base as the this-binding to the function found at base.name.  We
     # may even impose a post-parsing rule that prohibits any other
-    # usage in Jester and Jessie.
+    # usage in Justin and Jessie.
     expr ::= assignExpr ("," assignExpr)*                  ${binary};
   `;
 
-  return def({jester});
+  return def({justin});
 }());

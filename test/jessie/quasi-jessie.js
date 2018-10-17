@@ -11,12 +11,12 @@ const {def} = require('../../src/sesshim.js');
 const {bnf} = require('../../src/bootbnf.js');
 const {FAIL} = require('../../src/scanner.js');
 
-const {jester} = require('./quasi-jester.js');
+const {justin} = require('./quasi-justin.js');
 
 module.exports = (function() {
   "use strict";
 
-  const jessie = bnf.extends(jester)`
+  const jessie = bnf.extends(justin)`
 
     # Override rather than inherit start production.
     # The start production includes scripts, modules, and function

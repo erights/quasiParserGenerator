@@ -5,15 +5,15 @@ module.exports = (function(){
   "use strict";
 
   const {def} = require('./src/sesshim.js');
-  const {jester} = require('./test/jessie/quasi-jester.js');
+  const {justin} = require('./test/jessie/quasi-justin.js');
 
   console.log('----------');
-  let ast = jester`[{"a": 5, ...ra}, x.f + y[+i], ...r]`;
+  let ast = justin`[{"a": 5, ...ra}, x.f + y[+i], ...r]`;
   console.log(JSON.stringify(ast));
 
-  const {interpJester} = require('./test/jessie/interp-jester.js');
+  const {interpJustin} = require('./test/jessie/interp-justin.js');
 
-  const val = interpJester(ast, {
+  const val = interpJustin(ast, {
     x: {f: 6},
     y: [8, 7],
     i: 1,

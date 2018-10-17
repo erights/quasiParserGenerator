@@ -7,11 +7,11 @@ module.exports = (function() {
   const {visit, assert} = require('../../src/interp-utils.js');
   const {InterpJSONVisitor} = require('./interp-json.js');
 
-  function interpJester(ast, env) {
-    return new InterpJesterVisitor(env).i(ast);
+  function interpJustin(ast, env) {
+    return new InterpJustinVisitor(env).i(ast);
   }
 
-  class InterpJesterVisitor extends InterpJSONVisitor {
+  class InterpJustinVisitor extends InterpJSONVisitor {
     constructor(env) {
       super();
       this.env = env;
@@ -49,7 +49,7 @@ module.exports = (function() {
 
 /*
     quasi(parts) {
-      // TODO bug: This is the one element of Jester where we do need
+      // TODO bug: This is the one element of Justin where we do need
       // static preprocessing to be correct. We need to pre-extract
       // the literal parts into a literal object that has the same
       // identity on each sub-evaluation.
@@ -97,5 +97,5 @@ module.exports = (function() {
     }
   }
 
-  return def({interpJester});
+  return def({interpJustin});
 }());
