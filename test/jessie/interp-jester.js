@@ -45,7 +45,6 @@ module.exports = (function() {
       return this.env[id];
     }
     index(_, base, index) { return this.i(base)[this.i(index)]; }
-    data(_, value) { return value; }
     get(_, base, name) { return this.i(base)[name]; }
 
 /*
@@ -54,16 +53,6 @@ module.exports = (function() {
       // static preprocessing to be correct. We need to pre-extract
       // the literal parts into a literal object that has the same
       // identity on each sub-evaluation.
-      // TODO bug: We only provide the raw form at this time. I
-      // apologize once again for allowing a cooked form into the
-      // standard.
-      const raw = [parts[0]];
-      const args = [];
-      const len = parts.length;
-      for (let i = 1; i < len; i += 2) {
-        args.push(parts[i]);
-        raw.push(parts[i+1]);
-      }
     }
     tag(tagExpr, quasiExpr) {
       
