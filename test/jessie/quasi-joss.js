@@ -186,10 +186,10 @@ module.exports = (function() {
       "async" "*" method                                   ${(_,m) => ['asyncGenerator',...m]};
 
     asyncGeneratorDecl ::=
-      "async" generatorDecl                                ${(_,['generator',...f]) => ['asyncGenerator',...f]};
+      "async" generatorDecl                                ${(_,f) => ['asyncGenerator',...f]};
 
     asyncGeneratorExpr ::=
-      "async" generatorExpr                                ${(_,['generator',...f]) => ['asyncGenerator',...f]};
+      "async" generatorExpr                                ${(_,f) => ['asyncGenerator',...f]};
 
     # TODO classes
 
